@@ -40,7 +40,9 @@ function SafeGuardingApp() {
     </div>
   </label>
 
-  <button>Continue →</button>
+  <a href="https://valentine-profile.netlify.app/">
+    <button>Continue</button>
+  </a>
 
   <div className="badge">🔒 Anonymous Messaging</div>
 </div>

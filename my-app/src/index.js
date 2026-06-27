@@ -14,8 +14,6 @@ function SafeGuardingApp() {
     <div className="Body">
     <div className="Intro">
       <h1 className="H1">Secure communication, Absolute Privacy</h1>
-      
-
       <p>A minimalist space for high-stakes messaging. No metadata tracking, no data harvesting. Just clarity.</p>
     </div>
 

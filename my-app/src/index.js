@@ -8,13 +8,13 @@ function SafeGuardingApp() {
 
     <>
     <div className="Header">
-     <h1>🛡️ SafeGuarding</h1>
+     <h1>🛡️ SAFEGUARDING</h1>
     </div>
 
     <div className="Body">
     <div className="Intro">
-      <h1 className="H1">Secure communication, </h1>
-      <h1 className="H1">Absolut Privacy </h1>
+      <h1 className="H1">Secure communication, Absolute Privacy</h1>
+      
 
       <p>A minimalist space for high-stakes messaging. No metadata tracking, no data harvesting. Just clarity.</p>
     </div>

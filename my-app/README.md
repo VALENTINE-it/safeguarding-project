@@ -1,6 +1,17 @@
-# Getting Started with Create React App
+# Safeguarding App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This React app provides a secure-style landing page that guides users to a secure message form after selecting a message path.
+
+## About this page
+
+This page is the main landing interface for the Safeguarding application.
+It includes:
+- a branded header with the app title
+- an introduction to the secure messaging experience
+- a choice between starting a new message or following up
+- a `Continue` button that opens the secure message form
+
+The purpose of this page is to welcome users and guide them into the next step of the application.
 
 ## Available Scripts
 

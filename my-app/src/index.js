@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import reportWebVitals from './reportWebVitals';
-import SafeGuardingForm from './form';
+import SafeGuardingForm from './N.form';
 
 function SafeGuardingApp() {
   const [showForm, setShowForm] = useState(false);
@@ -43,7 +43,7 @@ function SafeGuardingApp() {
                 </div>
               </label>
 
-              <button type="button" onClick={() => setShowForm(true)}>
+              <button type="button" onClick={() => setShowForm(true)} className="start-btn">
                 Continue
               </button>
 

@@ -130,7 +130,7 @@ code {
   line-height: 1.65;
 }
 
-button {
+.start-btn {
   width: 100%;
   margin-top: 20px;
   padding: 16px 18px;

@@ -1,55 +1,59 @@
-import React from 'react';
+import React, { useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import reportWebVitals from './reportWebVitals';
+import SafeGuardingForm from './form';
 
 function SafeGuardingApp() {
+  const [showForm, setShowForm] = useState(false);
+
   return (
-
     <>
-    <div className="Header">
-     <h1>🛡️ SAFEGUARDING</h1>
-    </div>
+      <div className="Header">
+        <h1>🛡️ SAFEGUARDING</h1>
+      </div>
 
-    <div className="Body">
-    <div className="Intro">
-      <h1 className="H1">Secure communication, Absolute Privacy</h1>
-      <p>A minimalist space for high-stakes messaging. No metadata tracking, no data harvesting. Just clarity.</p>
-    </div>
+      <div className="Body">
+        <div className="Intro">
+          <h1 className="H1">Secure communication, Absolute Privacy</h1>
+          <p>A minimalist space for high-stakes messaging. No metadata tracking, no data harvesting. Just clarity.</p>
+        </div>
 
-    <div>
-      <div className="card">
-  <h3>Initiate Transmission</h3>
-  <p>Select your messaging path to continue.</p>
+        {showForm ? (
+          <SafeGuardingForm />
+        ) : (
+          <div>
+            <div className="card">
+              <h3>Initiate Transmission</h3>
+              <p>Select your messaging path to continue.</p>
 
-  <label className="option">
-    <input type="radio" name="path" value="new" defaultChecked />
-    <div>
-      <div className="option-title">New Message</div>
-      <div className="option-desc">Start a clean, encrypted conversation thread.</div>
-    </div>
-  </label>
+              <label className="option">
+                <input type="radio" name="path" value="new" defaultChecked />
+                <div>
+                  <div className="option-title">New Message</div>
+                  <div className="option-desc">Start a clean, encrypted conversation thread.</div>
+                </div>
+              </label>
 
-  <label className="option">
-    <input type="radio" name="path" value="follow" />
-    <div>
-      <div className="option-title">Follow up</div>
-      <div className="option-desc">Access an existing thread via Secure Token.</div>
-    </div>
-  </label>
+              <label className="option">
+                <input type="radio" name="path" value="follow" />
+                <div>
+                  <div className="option-title">Follow up</div>
+                  <div className="option-desc">Access an existing thread via Secure Token.</div>
+                </div>
+              </label>
 
-  <a href="https://valentine-profile.netlify.app/">
-    <button>Continue</button>
-  </a>
+              <button type="button" onClick={() => setShowForm(true)}>
+                Continue
+              </button>
 
-  <div className="badge">🔒 Anonymous Messaging</div>
-</div>
-
-    </div>
-    </div>
-
+              <div className="badge">🔒 Anonymous Messaging</div>
+            </div>
+          </div>
+        )}
+      </div>
     </>
-  )
+  );
 }
 
 const root = ReactDOM.createRoot(document.getElementById('root'));

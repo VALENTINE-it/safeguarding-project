@@ -2,10 +2,14 @@ import React, { useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import reportWebVitals from './reportWebVitals';
-import SafeGuardingForm from './N.form';
+import FollowUpForm from './F.form';
+import NewMessageForm from './N.form';
 
 function SafeGuardingApp() {
   const [showForm, setShowForm] = useState(false);
+  const [selectedPath, setSelectedPath] = useState('new');
+
+  const FormComponent = selectedPath === 'follow' ? FollowUpForm : NewMessageForm;
 
   return (
     <>
@@ -20,7 +24,7 @@ function SafeGuardingApp() {
         </div>
 
         {showForm ? (
-          <SafeGuardingForm />
+          <FormComponent />
         ) : (
           <div>
             <div className="card">
@@ -28,7 +32,13 @@ function SafeGuardingApp() {
               <p>Select your messaging path to continue.</p>
 
               <label className="option">
-                <input type="radio" name="path" value="new" defaultChecked />
+                <input
+                  type="radio"
+                  name="path"
+                  value="new"
+                  checked={selectedPath === 'new'}
+                  onChange={() => setSelectedPath('new')}
+                />
                 <div>
                   <div className="option-title">New Message</div>
                   <div className="option-desc">Start a clean, encrypted conversation thread.</div>
@@ -36,7 +46,13 @@ function SafeGuardingApp() {
               </label>
 
               <label className="option">
-                <input type="radio" name="path" value="follow" />
+                <input
+                  type="radio"
+                  name="path"
+                  value="follow"
+                  checked={selectedPath === 'follow'}
+                  onChange={() => setSelectedPath('follow')}
+                />
                 <div>
                   <div className="option-title">Follow up</div>
                   <div className="option-desc">Access an existing thread via Secure Token.</div>

@@ -8,6 +8,7 @@ import NewMessageForm from './N.form';
 function SafeGuardingApp() {
   const [showForm, setShowForm] = useState(false);
   const [selectedPath, setSelectedPath] = useState('new');
+  
 
   const FormComponent = selectedPath === 'follow' ? FollowUpForm : NewMessageForm;
 

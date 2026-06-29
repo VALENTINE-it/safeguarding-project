@@ -20,7 +20,7 @@ function SafeGuardingForm() {
 
           <label className="form-group">
             <span>TOPIC</span>
-            <input type="text" name="topic" placeholder="e.g., Safeguarding Report" />
+            <input type="text" name="topic" placeholder="e.g. New Safeguarding Report" />
           </label>
 
           <label className="form-group">

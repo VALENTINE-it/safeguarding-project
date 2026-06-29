@@ -23,7 +23,7 @@ function SafeGuardingForm() {
             <input
               type="text"
               name="topic"
-              placeholder="e.g., Safeguarding Report"
+              placeholder="e.g. Follow-up Report"
             />
           </label>
 

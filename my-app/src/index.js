@@ -25,7 +25,7 @@ function SafeGuardingApp() {
         </div>
 
         {showForm ? (
-          <FormComponent />
+         <FormComponent onBack={() => setShowForm(false)} />
         ) : (
           <div>
             <div className="card">

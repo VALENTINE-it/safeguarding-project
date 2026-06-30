@@ -61,7 +61,7 @@ function NewMessageForm({ onBack }) {
               Copy this token and keep it safe. It will not be shown again.
             </p>
           </div>
-          <button type="button" className="back-btn" onClick={-1}>
+          <button type="button" className="back-btn" onClick={onBack}>
             ← Back to Home
           </button>
         </div>

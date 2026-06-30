@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
+    "dotenv": "^16.6.1",
     "express": "^4.19.2",
     "express-rate-limit": "^7.3.1",
     "express-validator": "^7.1.0",
@@ -18,11 +18,11 @@
     "mongodb": "^7.4.0",
     "mongoose": "^8.5.1",
     "sanitize-html": "^2.13.0",
-    "uuid": "^10.0.0"
+    "uuid": "^14.0.1"
   },
   "devDependencies": {
     "jest": "^29.7.0",
-    "nodemon": "^3.1.4",
+    "nodemon": "^3.1.14",
     "supertest": "^7.0.0"
   },
   "engines": {

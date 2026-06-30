@@ -6,7 +6,7 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 function NewMessageForm({ onBack }) {
   const [topic, setTopic] = useState('');
   const [message, setMessage] = useState('');
-  const [status, setStatus] = useState('idle'); // idle | loading | success | error
+  const [status, setStatus] = useState('idle'); 
   const [threadToken, setThreadToken] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -61,7 +61,7 @@ function NewMessageForm({ onBack }) {
               Copy this token and keep it safe. It will not be shown again.
             </p>
           </div>
-          <button type="button" className="back-btn" onClick={onBack}>
+          <button type="button" className="back-btn" onClick={-1}>
             ← Back to Home
           </button>
         </div>

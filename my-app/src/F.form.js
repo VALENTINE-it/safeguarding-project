@@ -72,14 +72,12 @@ function FollowUpForm({ onBack }) {
       </div>
 
       <div className="form-card">
-        <h2>FOLLOW UP MESSAGE</h2>
-        <p className="subtitle">
-          Compose your secure transmission. All metadata is stripped upon departure.
-        </p>
+        <h2>Follow Up on Your Message</h2>
+        <p className="subtitle">Use your reference code to continue your conversation safely and privately. </p>
 
         <form onSubmit={handleSubmit}>
           <label className="form-group">
-            <span>THREAD TOKEN</span>
+            <span>Reference Code</span>
             <input
               type="text"
               name="token"
@@ -95,7 +93,7 @@ function FollowUpForm({ onBack }) {
             <input
               type="text"
               name="topic"
-              placeholder="e.g. Follow-up Report"
+              placeholder="e.g. What is this follow-up about?"
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
               required
@@ -104,10 +102,10 @@ function FollowUpForm({ onBack }) {
           </label>
 
           <label className="form-group">
-            <span>MESSAGE</span>
+            <span>Your message</span>
             <textarea
               name="message"
-              placeholder="Type your confidential message here..."
+              placeholder="Add any new information or updates here..."
               rows="6"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
@@ -129,7 +127,7 @@ function FollowUpForm({ onBack }) {
               className="send-btn"
               disabled={status === 'loading'}
             >
-              {status === 'loading' ? 'Sending…' : 'Send Anonymously →'}
+              {status === 'loading' ? 'Sending…' : 'Submit updates →'}
             </button>
           </div>
         </form>

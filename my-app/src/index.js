@@ -20,17 +20,17 @@ function SafeGuardingApp() {
 
       <div className="Body">
         <div className="Intro">
-          <h1 className="h1">Secure communication, Absolute Privacy</h1>
-          <p>A minimalist space for high-stakes messaging. No metadata tracking, no data harvesting. Just clarity.</p>
-        </div>
+          <h1 className="h1">Secure Communication, Complete Privacy</h1>
+<p>A safe and private space to share your concerns. Your identity is protected, and your voice matters.</p> 
+</div>
 
         {showForm ? (
          <FormComponent onBack={() => setShowForm(false)} />
         ) : (
           <div>
             <div className="card">
-              <h3>Initiate Transmission</h3>
-              <p>Select your messaging path to continue.</p>
+              <h3>Start Here</h3>
+              <p>Choose how you’d like to continue.</p>
 
               <label className="option">
                 <input
@@ -41,8 +41,8 @@ function SafeGuardingApp() {
                   onChange={() => setSelectedPath('new')}
                 />
                 <div>
-                  <div className="option-title">New Message</div>
-                  <div className="option-desc">Start a clean, encrypted conversation thread.</div>
+                  <div className="option-title">Send a New Message</div>
+                  <div className="option-desc">Start a private and secure conversation.</div>
                 </div>
               </label>
 
@@ -55,8 +55,8 @@ function SafeGuardingApp() {
                   onChange={() => setSelectedPath('follow')}
                 />
                 <div>
-                  <div className="option-title">Follow up</div>
-                  <div className="option-desc">Access an existing thread via Secure Token.</div>
+                  <div className="option-title">Follow Up on a Message</div>
+                  <div className="option-desc">Check updates using your reference code.</div>
                 </div>
               </label>
 

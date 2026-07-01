@@ -55,7 +55,7 @@ function NewMessageForm({ onBack }) {
             it is the only way to follow up on this thread.
           </p>
           <div className="token-box">
-            <strong>🔑 Your Secure Thread Token</strong>
+            <strong>🔑 Your Secure Thread Token </strong>
             <code>{threadToken}</code>
             <p className="token-note">
               Copy this token and keep it safe. It will not be shown again.
@@ -77,9 +77,7 @@ function NewMessageForm({ onBack }) {
 
       <div className="form-card">
         <h2>New Message</h2>
-        <p className="subtitle">
-          Compose your secure transmission. All metadata is stripped upon departure.
-        </p>
+        <p className="subtitle">Share your concern safely and privately. Your identity is protected.</p>
 
         <form onSubmit={handleSubmit}>
           <label className="form-group">
@@ -87,7 +85,7 @@ function NewMessageForm({ onBack }) {
             <input
               type="text"
               name="topic"
-              placeholder="e.g. New Safeguarding Report"
+              placeholder="e.g. Briefly describe what this is about"
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
               required
@@ -99,7 +97,7 @@ function NewMessageForm({ onBack }) {
             <span>MESSAGE</span>
             <textarea
               name="message"
-              placeholder="Type your confidential message here..."
+              placeholder="Share what happened..."
               rows="6"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
@@ -114,7 +112,7 @@ function NewMessageForm({ onBack }) {
 
           <div className="form-actions">
             <button type="button" className="back-btn" onClick={onBack}>
-              ← Back
+              ← Go Back
             </button>
             <button
               type="submit"

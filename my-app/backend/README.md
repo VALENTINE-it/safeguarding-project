@@ -198,3 +198,16 @@ cd my-app && npm start
 ```
 
 Or add a `concurrently` script to the root `package.json` to run both with one command.
+
+
+## Building Docker Image
+
+Run `sudo docker build -t <name-of-image>`
+
+## How to run a docker Image
+
+Run `sudo docker image`
+
+## Running The APP using Docker
+
+Run `sudo docker run -p 3000:3000 <name-of-image>`

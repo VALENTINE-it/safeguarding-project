@@ -3,10 +3,31 @@ import './form.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
+// Reusable Copy Component
+function CopyText({ text }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  return (
+    <div className="copy-container">
+      <code>{text}</code>
+      <button onClick={handleCopy} className="copy-btn">
+        {copied ? 'Copied!' : 'Copy'}
+      </button>
+    </div>
+  );
+}
+
 function NewMessageForm({ onBack }) {
   const [topic, setTopic] = useState('');
   const [message, setMessage] = useState('');
-  const [status, setStatus] = useState('idle'); 
+  const [status, setStatus] = useState('idle');
   const [threadToken, setThreadToken] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -48,19 +69,22 @@ function NewMessageForm({ onBack }) {
         <div className="security-banner">
           🔒 END-TO-END ENCRYPTION ACTIVE • ZERO-KNOWLEDGE PROTOCOL
         </div>
+
         <div className="form-card">
           <h2>✅ Message Sent</h2>
           <p className="subtitle">
             Your message has been delivered securely. Save your token below —
             it is the only way to follow up on this thread.
           </p>
+
           <div className="token-box">
-            <strong>🔑 Your Secure Thread Token </strong>
-            <code>{threadToken}</code>
+            <strong>🔑 Your Secure Thread Token</strong>
+            <CopyText text={threadToken} />
             <p className="token-note">
               Copy this token and keep it safe. It will not be shown again.
             </p>
           </div>
+
           <button type="button" className="back-btn" onClick={onBack}>
             ← Back to Home
           </button>
@@ -77,7 +101,9 @@ function NewMessageForm({ onBack }) {
 
       <div className="form-card">
         <h2>New Message</h2>
-        <p className="subtitle">Share your concern safely and privately. Your identity is protected.</p>
+        <p className="subtitle">
+          Share your concern safely and privately. Your identity is protected.
+        </p>
 
         <form onSubmit={handleSubmit}>
           <label className="form-group">
@@ -114,6 +140,7 @@ function NewMessageForm({ onBack }) {
             <button type="button" className="back-btn" onClick={onBack}>
               ← Go Back
             </button>
+
             <button
               type="submit"
               className="send-btn"
@@ -130,6 +157,7 @@ function NewMessageForm({ onBack }) {
           <h4>🛡️ Identity Masking</h4>
           <p>Your IP address and device info are hidden.</p>
         </div>
+
         <div className="info-card">
           <h4>🔥 Self-Destruction</h4>
           <p>This message will be deleted after being read.</p>

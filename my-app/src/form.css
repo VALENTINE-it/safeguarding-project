@@ -10,6 +10,16 @@ body {
   padding: 20px 0 24px 30px;
 }
 
+.copy-btn {
+  background: #0f766e;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
 .security-banner {
   background: #e6f4f1;
   color: #0f766e;

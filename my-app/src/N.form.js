@@ -3,7 +3,6 @@ import './form.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
-// Reusable Copy Component
 function CopyText({ text }) {
   const [copied, setCopied] = useState(false);
 
@@ -73,7 +72,7 @@ function NewMessageForm({ onBack }) {
         <div className="form-card">
           <h2>✅ Message Sent</h2>
           <p className="subtitle">
-            Your message has been delivered securely. Save your token below —
+            Your message has been delivered securely. Copy your token below —
             it is the only way to follow up on this thread.
           </p>
 

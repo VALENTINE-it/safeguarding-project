@@ -218,6 +218,51 @@ textarea {
   text-decoration: underline;
 }
 
+.message-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.message-section {
+  margin-top: 0;
+}
+
+.message-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.message-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.message-item p {
+  margin: 4px 0 0;
+  color: #475569;
+}
+
+.read-item {
+  background: #eefcf6;
+  border-color: #b7e4c7;
+}
+
+.message-empty {
+  color: #64748b;
+  margin: 0;
+}
+
 @media (max-width: 640px) {
   .form-container {
     padding: 16px 0 20px;
@@ -251,5 +296,14 @@ textarea {
 
   .auth-link-row {
     flex-direction: column;
+  }
+
+  .message-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .message-columns {
+    grid-template-columns: 1fr;
   }
 }

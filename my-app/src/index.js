@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom/client';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './index.css';
 import reportWebVitals from './reportWebVitals';
 import FollowUpForm from './F.form';
 import NewMessageForm from './N.form';
+import Admin from './admin';
 
 function SafeGuardingApp() {
   const [showForm, setShowForm] = useState(false);
@@ -73,10 +75,21 @@ function SafeGuardingApp() {
   );
 }
 
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<SafeGuardingApp />} />
+        <Route path="/admin" element={<Admin />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <SafeGuardingApp />
+    <App />
   </React.StrictMode>
 );
 

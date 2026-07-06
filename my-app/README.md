@@ -92,3 +92,7 @@ Run `sudo docker image`
 ## Running The APP using Docker
 
 Run `sudo docker run -p 3000:3000 <name-of-image>`
+
+## Admin Page Access
+
+`http://localhost:5007/admin`

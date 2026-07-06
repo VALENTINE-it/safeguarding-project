@@ -21,6 +21,24 @@ router.get('/unread', async (req, res) => {
   }
 });
 
+// Mark all unread messages as read (must come before /:id/read)
+router.patch('/mark-all-read', async (req, res) => {
+  try {
+    const result = await Message.updateMany({ isRead: false, isDeleted: false }, { isRead: true, readAt: new Date() });
+
+    // Mongoose returned object shape varies by version — prefer modifiedCount
+    const modified = result.modifiedCount ?? result.nModified ?? 0;
+
+    return res.status(200).json({
+      success: true,
+      modifiedCount: modified,
+    });
+  } catch (err) {
+    console.error('Error marking all messages as read:', err);
+    return res.status(500).json({ error: 'Failed to mark messages as read.' });
+  }
+});
+
 router.patch('/:id/read', async (req, res) => {
   try {
     const updatedMessage = await Message.findByIdAndUpdate(
@@ -46,24 +64,6 @@ router.patch('/:id/read', async (req, res) => {
   } catch (err) {
     console.error('Error marking message as read:', err);
     return res.status(500).json({ error: 'Failed to mark message as read.' });
-  }
-});
-
-// Mark all unread messages as read
-router.patch('/mark-all-read', async (req, res) => {
-  try {
-    const result = await Message.updateMany({ isRead: false, isDeleted: false }, { isRead: true, readAt: new Date() });
-
-    // Mongoose returned object shape varies by version — prefer modifiedCount
-    const modified = result.modifiedCount ?? result.nModified ?? 0;
-
-    return res.status(200).json({
-      success: true,
-      modifiedCount: modified,
-    });
-  } catch (err) {
-    console.error('Error marking all messages as read:', err);
-    return res.status(500).json({ error: 'Failed to mark messages as read.' });
   }
 });
 

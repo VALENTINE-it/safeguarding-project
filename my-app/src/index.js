@@ -6,6 +6,9 @@ import reportWebVitals from './reportWebVitals';
 import FollowUpForm from './F.form';
 import NewMessageForm from './N.form';
 import Admin from './admin';
+import Admins from './Admins';
+import MessageDetail from './MessageDetail';
+import { Link } from 'react-router-dom';
 
 function SafeGuardingApp() {
   const [showForm, setShowForm] = useState(false);
@@ -68,6 +71,14 @@ function SafeGuardingApp() {
 
               <div className="badge">🔒 Anonymous Messaging</div>
             </div>
+            <div className="secondary-link-row">
+              <Link to="/admins" className="auth-link">
+                View Admins Page
+              </Link>
+              <Link to="/admin" className="auth-link">
+                View Message Admin Dashboard
+              </Link>
+            </div>
           </div>
         )}
       </div>
@@ -81,6 +92,8 @@ function App() {
       <Routes>
         <Route path="/" element={<SafeGuardingApp />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/admins" element={<Admins />} />
+        <Route path="/message/:messageId" element={<MessageDetail />} />
       </Routes>
     </BrowserRouter>
   );

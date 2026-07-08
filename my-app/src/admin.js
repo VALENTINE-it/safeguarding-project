@@ -1,34 +1,36 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import './form.css';
 
 function Admin() {
-    const [unreadMessages, setUnreadMessages] = useState([]);
-    const [readMessages, setReadMessages] = useState([]);
+    const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [visibleCount, setVisibleCount] = useState(4);
+    const [visibleCount, setVisibleCount] = useState(8);
+    const [searchToken, setSearchToken] = useState('');
+    const [selectedDate, setSelectedDate] = useState('');
 
-    const fetchUnreadMessages = async () => {
+    const fetchMessages = useCallback(async (token = searchToken, date = selectedDate) => {
+        setLoading(true);
+
         try {
-            const response = await fetch('http://localhost:5000/api/messages/unread');
+            const params = new URLSearchParams();
+            if (token.trim()) params.append('threadToken', token.trim());
+            if (date) params.append('date', date);
+
+            const response = await fetch(`http://localhost:5000/api/messages?${params.toString()}`);
             const data = await response.json();
 
             if (data.success) {
-                setUnreadMessages(data.messages || []);
+                setMessages(data.messages || []);
             }
         } catch (error) {
-            console.error('Failed to fetch unread messages:', error);
+            console.error('Failed to fetch messages:', error);
         } finally {
             setLoading(false);
         }
-    };
+    }, [searchToken, selectedDate]);
 
     const markAsRead = async (messageId) => {
-        const movedMessage = unreadMessages.find((message) => (message.id || message._id) === messageId);
-
-        if (!movedMessage) {
-            return;
-        }
-
         try {
             const response = await fetch(`http://localhost:5000/api/messages/${messageId}/read`, {
                 method: 'PATCH',
@@ -36,8 +38,11 @@ function Admin() {
             const data = await response.json();
 
             if (data.success) {
-                setUnreadMessages((current) => current.filter((message) => (message.id || message._id) !== messageId));
-                setReadMessages((current) => [{ ...movedMessage, ...data.message }, ...current]);
+                setMessages((current) =>
+                    current.map((message) =>
+                        (message.id || message._id) === messageId ? { ...message, ...data.message } : message
+                    )
+                );
             }
         } catch (error) {
             console.error('Failed to mark message as read:', error);
@@ -45,13 +50,11 @@ function Admin() {
     };
 
     const markAllAsRead = async () => {
-        // optimistic UI update
-        const toMark = unreadMessages.map((m) => (m.id || m._id));
-        if (toMark.length === 0) return;
+        if (messages.length === 0) return;
 
-        // Move all locally first
-        setReadMessages((current) => [...unreadMessages.map((m) => ({ ...m, isRead: true, readAt: new Date().toISOString() })), ...current]);
-        setUnreadMessages([]);
+        setMessages((current) =>
+            current.map((message) => ({ ...message, isRead: true, readAt: new Date().toISOString() }))
+        );
 
         try {
             const response = await fetch('http://localhost:5000/api/messages/mark-all-read', { method: 'PATCH' });
@@ -64,11 +67,21 @@ function Admin() {
         }
     };
 
-    const loadMore = () => setVisibleCount((c) => c + 4);
+    const handleSearch = () => {
+        fetchMessages(searchToken, selectedDate);
+    };
+
+    const handleDateChange = (event) => {
+        const value = event.target.value;
+        setSelectedDate(value);
+        fetchMessages(searchToken, value);
+    };
+
+    const loadMore = () => setVisibleCount((c) => c + 8);
 
     useEffect(() => {
-        fetchUnreadMessages();
-    }, []);
+        fetchMessages();
+    }, [fetchMessages]);
 
     return (
         <div className="auth-shell">
@@ -79,58 +92,82 @@ function Admin() {
                 <div className="message-columns">
                     <section className="message-section">
                         <div className="message-header">
-                            <h2 className="auth-subtitle">Unread Messages</h2>
+                            <h2 className="auth-subtitle">All Messages</h2>
                             <div className="header-controls">
-                                <span className="unread-badge">{unreadMessages.length} Total</span>
+                                <span className="unread-badge">{messages.length} Total</span>
                                 <button className="mark-all-link" onClick={markAllAsRead}>Mark all as read</button>
                             </div>
                         </div>
+
+                        <div className="admin-controls">
+                            <div className="search-panel">
+                                <input
+                                    className="search-input"
+                                    type="text"
+                                    value={searchToken}
+                                    placeholder="Search by thread token"
+                                    onChange={(e) => setSearchToken(e.target.value)}
+                                />
+                                <button className="search-button" type="button" onClick={handleSearch}>
+                                    Search
+                                </button>
+                            </div>
+
+                            <div className="filter-panel">
+                                <label htmlFor="dateFilter">Filter by date</label>
+                                <input
+                                    id="dateFilter"
+                                    className="filter-select"
+                                    type="date"
+                                    value={selectedDate}
+                                    onChange={handleDateChange}
+                                />
+                            </div>
+                        </div>
+
                         {loading ? (
                             <p className="message-empty">Loading messages...</p>
-                        ) : unreadMessages.length === 0 ? (
-                            <p className="message-empty">No unread messages at the moment.</p>
+                        ) : messages.length === 0 ? (
+                            <p className="message-empty">No messages match your criteria.</p>
                         ) : (
                             <ul className="message-list">
-                                {unreadMessages.slice(0, visibleCount).map((message) => (
-                                    <li key={message.id || message._id} className="message-item">
-                                        <div>
-                                            <div className="message-topline">
-                                                <span className="status-dot" />
-                                                <strong className="message-topic">{message.topic}</strong>
-                                            </div>
-                                            <p className="message-body">{message.message}</p>
-                                            <div className="message-meta">ID: {message.id || message._id} • {new Date(message.createdAt || message.readAt || Date.now()).toLocaleString()}</div>
-                                        </div>
-                                        <button className="auth-button" type="button" onClick={() => markAsRead(message.id || message._id)}>
-                                            Mark as Read
-                                        </button>
-                                    </li>
-                                ))}
+                                {messages.slice(0, visibleCount).map((message) => {
+                                    const isRead = !!message.isRead;
+                                    return (
+                                        <li
+                                            key={message.id || message._id}
+                                            className={`message-item ${isRead ? 'read-item' : 'unread-item'}`}
+                                        >
+                                            <Link to={`/message/${message.id || message._id}`} className="message-link">
+                                                <div>
+                                                    <div className="message-topline">
+                                                        {!isRead && <span className="status-dot" />}
+                                                        <strong className="message-topic">{message.topic}</strong>
+                                                    </div>
+                                                    <p className="message-body">{message.message}</p>
+                                                    <div className="message-meta">
+                                                        Token: {message.threadToken} • ID: {message.id || message._id} • {new Date(message.createdAt || message.readAt || Date.now()).toLocaleString()}
+                                                    </div>
+                                                </div>
+                                            </Link>
+                                            {!isRead && (
+                                                <button
+                                                    className="auth-button mark-read-btn"
+                                                    type="button"
+                                                    onClick={() => markAsRead(message.id || message._id)}
+                                                >
+                                                    Mark as Read
+                                                </button>
+                                            )}
+                                        </li>
+                                    );
+                                })}
                             </ul>
                         )}
-                        {unreadMessages.length > visibleCount && (
+                        {messages.length > visibleCount && (
                             <div className="load-more-wrap">
                                 <button className="load-more-btn" onClick={loadMore}>Load More Entries</button>
                             </div>
-                        )}
-                    </section>
-
-                    <section className="message-section">
-                        <h2 className="auth-subtitle">Read Messages</h2>
-                        {readMessages.length === 0 ? (
-                            <p className="message-empty">Read messages will appear here after you review them.</p>
-                        ) : (
-                            <ul className="message-list">
-                                {readMessages.map((message) => (
-                                    <li key={message.id || message._id} className="message-item read-item">
-                                        <div>
-                                            <strong>{message.topic}</strong>
-                                            <p>{message.message}</p>
-                                            <div className="message-meta">ID: {message.id || message._id} • {new Date(message.readAt || message.createdAt || Date.now()).toLocaleString()}</div>
-                                        </div>
-                                    </li>
-                                ))}
-                            </ul>
                         )}
                     </section>
                 </div>

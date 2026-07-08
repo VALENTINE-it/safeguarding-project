@@ -102,9 +102,18 @@ function Admin() {
                             <h2 className="auth-subtitle">All Messages</h2>
                             <div className="header-controls">
                                 <span className="unread-badge">{messages.length} Total</span>
-                                <button className="mark-all-link" onClick={markAllAsRead}>Mark all as read</button>
-                            </div>
+                        <div className="header-actions">
+                            <button className="mark-all-link" onClick={markAllAsRead}>Mark all as read</button>
+                            <button className="auth-button logout-button" type="button" onClick={() => {
+                                localStorage.removeItem('adminAuth');
+                                localStorage.removeItem('adminUser');
+                                navigate('/admin/login');
+                            }}>
+                                Logout
+                            </button>
                         </div>
+                    </div>
+                </div>
 
                         <div className="admin-controls">
                             <div className="search-panel">

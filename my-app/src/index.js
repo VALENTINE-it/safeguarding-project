@@ -8,6 +8,8 @@ import NewMessageForm from './N.form';
 import Admin from './admin';
 import Admins from './Admins';
 import MessageDetail from './MessageDetail';
+import AdminLogin from './Admin/A-login';
+import AdminReg from './Admin/A.reg.js';
 import { Link } from 'react-router-dom';
 
 function SafeGuardingApp() {
@@ -75,8 +77,8 @@ function SafeGuardingApp() {
               <Link to="/admins" className="auth-link">
                 View Admins Page
               </Link>
-              <Link to="/admin" className="auth-link">
-                View Message Admin Dashboard
+              <Link to="/admin/login" className="auth-link">
+                Admin Login
               </Link>
             </div>
           </div>
@@ -91,6 +93,8 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<SafeGuardingApp />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/register" element={<AdminReg />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/admins" element={<Admins />} />
         <Route path="/message/:messageId" element={<MessageDetail />} />

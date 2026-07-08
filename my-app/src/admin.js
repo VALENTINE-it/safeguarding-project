@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import './form.css';
 
 function Admin() {
@@ -79,9 +79,16 @@ function Admin() {
 
     const loadMore = () => setVisibleCount((c) => c + 8);
 
+    const navigate = useNavigate();
+
     useEffect(() => {
+        const adminAuth = localStorage.getItem('adminAuth');
+        if (!adminAuth) {
+            navigate('/admin/login');
+            return;
+        }
         fetchMessages();
-    }, [fetchMessages]);
+    }, [fetchMessages, navigate]);
 
     return (
         <div className="auth-shell">
@@ -89,7 +96,7 @@ function Admin() {
                 <h1 className="auth-title">Admin Dashboard</h1>
                 <p className="auth-copy">New safeguarding messages appear here until they are reviewed.</p>
 
-                <div className="message-columns">
+                <div className="message-columns single-column">
                     <section className="message-section">
                         <div className="message-header">
                             <h2 className="auth-subtitle">All Messages</h2>

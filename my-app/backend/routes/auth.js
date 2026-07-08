@@ -24,6 +24,11 @@ router.post(
         return res.status(409).json({ error: 'Username or email already exists.' });
       }
 
+      const adminCount = await Admin.countDocuments();
+      if (adminCount >= 3) {
+        return res.status(403).json({ error: 'Admin registration limit reached. Only 3 admin accounts are allowed.' });
+      }
+
       const admin = new Admin({ username, email });
       admin.setPassword(password);
       await admin.save();

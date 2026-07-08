@@ -23,7 +23,7 @@ function MessageDetail() {
           setError(data.error || 'Could not load the message.');
         }
       } catch (err) {
-        setError('Unable to reach the server.');
+        setError(err.message ? `Unable to reach the server: ${err.message}` : 'Unable to reach the server.');
       } finally {
         setLoading(false);
       }

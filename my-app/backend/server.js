@@ -14,10 +14,11 @@ connectDB();
 // Security middleware
 app.use(helmet());
 
-// Rate limiting — max 20 requests per 15 min per IP for message routes
+// Rate limiting — max 100 requests per 15 min per IP for message routes
+// This is intentionally higher for local development and normal app testing.
 const messageLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: process.env.NODE_ENV === 'production' ? 20 : 100,
   message: { error: 'Too many requests from this IP. Please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -26,7 +27,7 @@ const messageLimiter = rateLimit({
 // General rate limit
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 1000,
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -42,8 +43,9 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: true, // reflects whatever origin made the request — good for dev
-    methods: ['GET', 'POST'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    methods: ['GET', 'POST', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    preflightContinue: false,
   })
 );
 

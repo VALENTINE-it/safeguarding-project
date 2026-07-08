@@ -10,7 +10,7 @@ function AdminReg() {
     const [error, setError] = useState('');
     const navigate = useNavigate();
 
-    const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
         event.preventDefault();
         setError('');
 
@@ -24,17 +24,25 @@ function AdminReg() {
             return;
         }
 
-        const users = JSON.parse(localStorage.getItem('adminUsers') || '[]');
-        const exists = users.some((user) => user.username === username || user.email === email);
+        try {
+            const response = await fetch('http://localhost:5000/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, email, password }),
+            });
+            const data = await response.json();
 
-        if (exists) {
-            setError('An account with that username or email already exists.');
-            return;
+            if (!response.ok) {
+                const message = data.error || data.errors?.[0]?.msg || 'Unable to register admin.';
+                setError(message);
+                return;
+            }
+
+            navigate('/admin/login');
+        } catch (err) {
+            console.error('Registration error:', err);
+            setError('Unable to reach server. Please try again later.');
         }
-
-        const newUser = { username, email, password };
-        localStorage.setItem('adminUsers', JSON.stringify([...users, newUser]));
-        navigate('/admin/login');
     };
 
     return (

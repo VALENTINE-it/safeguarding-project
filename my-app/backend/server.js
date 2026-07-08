@@ -54,6 +54,7 @@ app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: false, limit: '10kb' }));
 
 // Routes
+app.use('/api/auth', require('./routes/auth'));
 app.use('/api/messages', messageLimiter, require('./routes/messages'));
 app.use('/api/threads', require('./routes/threads'));
 

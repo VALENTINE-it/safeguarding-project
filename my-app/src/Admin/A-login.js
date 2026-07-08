@@ -8,23 +8,31 @@ function AdminLogin() {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     setError('');
 
-    const users = JSON.parse(localStorage.getItem('adminUsers') || '[]');
-    const user = users.find(
-      (item) => (item.username === username || item.email === username) && item.password === password
-    );
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await response.json();
 
-    if (!user) {
-      setError('Invalid username/email or password.');
-      return;
+      if (!response.ok) {
+        const message = data.error || data.errors?.[0]?.msg || 'Login failed.';
+        setError(message);
+        return;
+      }
+
+      localStorage.setItem('adminAuth', 'true');
+      localStorage.setItem('adminUser', JSON.stringify(data.admin));
+      navigate('/admin');
+    } catch (err) {
+      console.error('Login error:', err);
+      setError('Unable to reach server. Please try again later.');
     }
-
-    localStorage.setItem('adminAuth', 'true');
-    localStorage.setItem('adminUser', JSON.stringify(user));
-    navigate('/admin');
   };
 
   return (

@@ -87,7 +87,7 @@ Run `sudo docker build -t <name-of-image>`
 
 ## How to run a docker Image
 
-Run `sudo docker image`
+Run `sudo docker images`
 
 ## Running The APP using Docker
 

@@ -6,6 +6,7 @@ function Admin() {
     const [unreadMessages, setUnreadMessages] = useState([]);
     const [readMessages, setReadMessages] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [adminName, setAdminName] = useState('Admin');
 
     const fetchUnreadMessages = async () => {
         try {
@@ -42,13 +43,23 @@ function Admin() {
     };
 
     useEffect(() => {
+        const storedAdmin = localStorage.getItem('adminUser');
+        if (storedAdmin) {
+            try {
+                const parsedAdmin = JSON.parse(storedAdmin);
+                setAdminName(parsedAdmin.username || parsedAdmin.email || 'Admin');
+            } catch (error) {
+                console.error('Failed to parse admin user:', error);
+            }
+        }
+
         fetchUnreadMessages();
     }, []);
 
     return (
         <div className="auth-shell">
             <div className="auth-card">
-                <h1 className="auth-title">Admin Dashboard</h1>
+                <h1 className="auth-title">Welcome back, {adminName}</h1>
                 <p className="auth-copy">New safeguarding messages appear here until they are reviewed.</p>
 
                 <section className="message-section">

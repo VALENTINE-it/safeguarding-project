@@ -8,6 +8,7 @@ function Admin() {
     const [visibleCount, setVisibleCount] = useState(8);
     const [searchToken, setSearchToken] = useState('');
     const [selectedDate, setSelectedDate] = useState('');
+    const [adminName, setAdminName] = useState('Admin');
 
     const fetchMessages = useCallback(async (token = searchToken, date = selectedDate) => {
         setLoading(true);
@@ -87,13 +88,24 @@ function Admin() {
             navigate('/admin/login');
             return;
         }
+
+        const storedAdmin = localStorage.getItem('adminUser');
+        if (storedAdmin) {
+            try {
+                const parsedAdmin = JSON.parse(storedAdmin);
+                setAdminName(parsedAdmin.username || parsedAdmin.email || 'Admin');
+            } catch (error) {
+                console.error('Failed to parse admin user:', error);
+            }
+        }
+
         fetchMessages();
     }, [fetchMessages, navigate]);
 
     return (
         <div className="auth-shell">
             <div className="auth-card">
-                <h1 className="auth-title">Admin Dashboard</h1>
+                <h1 className="auth-title">Welcome back, {adminName}</h1>
                 <p className="auth-copy">New safeguarding messages appear here until they are reviewed.</p>
 
                 <div className="message-columns single-column">

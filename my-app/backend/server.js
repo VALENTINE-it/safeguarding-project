@@ -14,7 +14,7 @@ connectDB();
 // Security middleware
 app.use(helmet());
 
-// Rate limiting — max 100 requests per 15 min per IP for message routes
+// Rate limiting — max 1000 requests per 15 min per IP for message routes
 // This is intentionally higher for local development and normal app testing.
 const messageLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,

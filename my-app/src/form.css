@@ -320,6 +320,14 @@ textarea {
   border: 1px solid rgba(255,255,255,0.12);
   background: rgba(255,255,255,0.06);
   color: #e6eef6;
+  appearance: auto;
+  -webkit-appearance: auto;
+  cursor: pointer;
+}
+
+.filter-select::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
 }
 
 .search-input {

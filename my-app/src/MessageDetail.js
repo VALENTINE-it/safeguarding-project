@@ -14,7 +14,19 @@ function MessageDetail() {
   useEffect(() => {
     async function fetchMessage() {
       try {
-        const response = await fetch(`${API_BASE}/api/messages/${messageId}`);
+        const params = new URLSearchParams();
+        const storedAdmin = localStorage.getItem('adminUser');
+        if (storedAdmin) {
+          try {
+            const parsedAdmin = JSON.parse(storedAdmin);
+            const adminId = parsedAdmin.id || parsedAdmin._id;
+            if (adminId) params.append('adminId', adminId);
+          } catch (parseErr) {
+            console.error('Failed to parse admin user:', parseErr);
+          }
+        }
+
+        const response = await fetch(`${API_BASE}/api/messages/${messageId}?${params.toString()}`);
         const data = await response.json();
 
         if (response.ok && data.success) {
@@ -77,6 +89,15 @@ function MessageDetail() {
               <span className="detail-label">Topic</span>
               <span>{message.topic}</span>
             </div>
+            {message.reportedStaff && (
+              <div className="detail-row">
+                <span className="detail-label">Reported staff member</span>
+                <span>
+                  {message.reportedStaff.name}
+                  {message.reportedStaff.role ? ` (${message.reportedStaff.role})` : ''}
+                </span>
+              </div>
+            )}
             <div className="detail-row">
               <span className="detail-label">Message</span>
               <span className="detail-body">{message.message}</span>

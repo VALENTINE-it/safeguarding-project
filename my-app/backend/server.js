@@ -43,7 +43,7 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: true, // reflects whatever origin made the request — good for dev
-    methods: ['GET', 'POST', 'PATCH', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
     preflightContinue: false,
   })
@@ -57,6 +57,7 @@ app.use(express.urlencoded({ extended: false, limit: '10kb' }));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/messages', messageLimiter, require('./routes/messages'));
 app.use('/api/threads', require('./routes/threads'));
+app.use('/api/staff', require('./routes/staff'));
 
 // Health check
 app.get('/api/health', (req, res) => {

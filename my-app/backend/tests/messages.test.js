@@ -24,15 +24,17 @@ describe('admin message inbox endpoints', () => {
 
   test('GET /api/messages/unread returns unread messages', async () => {
     Message.find.mockReturnValueOnce({
-      sort: jest.fn().mockResolvedValueOnce([
-        {
-          _id: { toString: () => 'msg-1' },
-          topic: 'Safety issue',
-          message: 'Needs review',
-          isRead: false,
-          toJSON: () => ({ topic: 'Safety issue', message: 'Needs review', isRead: false }),
-        },
-      ]),
+      populate: jest.fn().mockReturnValueOnce({
+        sort: jest.fn().mockResolvedValueOnce([
+          {
+            _id: { toString: () => 'msg-1' },
+            topic: 'Safety issue',
+            message: 'Needs review',
+            isRead: false,
+            toJSON: () => ({ topic: 'Safety issue', message: 'Needs review', isRead: false }),
+          },
+        ]),
+      }),
     });
 
     const response = await request(createApp()).get('/api/messages/unread');

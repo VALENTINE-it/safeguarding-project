@@ -2,11 +2,48 @@ const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const Message = require('../models/Message');
+const Admin = require('../models/Admin');
+
+/**
+ * Resolve the requesting admin's linked staffId (if any) from an
+ * `adminId` query param sent by the frontend. Returns null if no
+ * admin was identified or the admin isn't linked to a staff record.
+ *
+ * NOTE: this app currently has no session/JWT layer — admin identity
+ * is passed by the client the same way the rest of this codebase
+ * already handles it (no auth middleware on any /api/messages route).
+ * That means this check is a data-hiding safeguard, not a security
+ * boundary: it stops a linked admin's own dashboard from ever
+ * displaying a report about them, but a determined client could
+ * still omit/alter adminId. Adding real authenticated sessions is a
+ * good follow-up but is out of scope for this change.
+ */
+async function getExcludedStaffId(req) {
+  const { adminId } = req.query;
+  if (!adminId) return null;
+
+  try {
+    const admin = await Admin.findById(adminId).select('staffId');
+    return admin && admin.staffId ? admin.staffId.toString() : null;
+  } catch (err) {
+    // Invalid/unknown adminId — treat as "no admin identified"
+    return null;
+  }
+}
+
+function withReportedStaffPopulated(query) {
+  return query.populate('reportedStaff', 'name role');
+}
 
 router.get('/', async (req, res) => {
   try {
     const { threadToken, filter, date } = req.query;
     const query = { isDeleted: false };
+
+    const excludedStaffId = await getExcludedStaffId(req);
+    if (excludedStaffId) {
+      query.reportedStaff = { $ne: excludedStaffId };
+    }
 
     if (threadToken) {
       query.threadToken = threadToken;
@@ -38,7 +75,7 @@ router.get('/', async (req, res) => {
       }
     }
 
-    const messages = await Message.find(query).sort({ createdAt: -1 });
+    const messages = await withReportedStaffPopulated(Message.find(query)).sort({ createdAt: -1 });
     const formattedMessages = messages.map((message) => ({
       ...message.toJSON(),
       id: message._id.toString(),
@@ -56,7 +93,14 @@ router.get('/', async (req, res) => {
 
 router.get('/unread', async (req, res) => {
   try {
-    const messages = await Message.find({ isRead: false, isDeleted: false }).sort({ createdAt: -1 });
+    const query = { isRead: false, isDeleted: false };
+
+    const excludedStaffId = await getExcludedStaffId(req);
+    if (excludedStaffId) {
+      query.reportedStaff = { $ne: excludedStaffId };
+    }
+
+    const messages = await withReportedStaffPopulated(Message.find(query)).sort({ createdAt: -1 });
     const formattedMessages = messages.map((message) => ({
       ...message.toJSON(),
       id: message._id.toString(),
@@ -75,7 +119,16 @@ router.get('/unread', async (req, res) => {
 // Mark all unread messages as read (must come before /:id/read)
 router.patch('/mark-all-read', async (req, res) => {
   try {
-    const result = await Message.updateMany({ isRead: false, isDeleted: false }, { isRead: true, readAt: new Date() });
+    const query = { isRead: false, isDeleted: false };
+
+    const excludedStaffId = await getExcludedStaffId(req);
+    if (excludedStaffId) {
+      // Never touch (or even acknowledge) messages reported against
+      // this admin's own staff record.
+      query.reportedStaff = { $ne: excludedStaffId };
+    }
+
+    const result = await Message.updateMany(query, { isRead: true, readAt: new Date() });
 
     // Mongoose returned object shape varies by version — prefer modifiedCount
     const modified = result.modifiedCount ?? result.nModified ?? 0;
@@ -92,8 +145,20 @@ router.patch('/mark-all-read', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    const message = await Message.findById(req.params.id);
+    const message = await withReportedStaffPopulated(Message.findById(req.params.id));
     if (!message || message.isDeleted) {
+      return res.status(404).json({ success: false, error: 'Message not found.' });
+    }
+
+    const excludedStaffId = await getExcludedStaffId(req);
+    if (
+      excludedStaffId &&
+      message.reportedStaff &&
+      message.reportedStaff._id.toString() === excludedStaffId
+    ) {
+      // Respond the same way as "not found" — an admin who was
+      // reported in a message should never learn that a report
+      // about them exists.
       return res.status(404).json({ success: false, error: 'Message not found.' });
     }
 
@@ -112,6 +177,14 @@ router.get('/:id', async (req, res) => {
 
 router.patch('/:id/read', async (req, res) => {
   try {
+    const excludedStaffId = await getExcludedStaffId(req);
+    if (excludedStaffId) {
+      const existing = await Message.findById(req.params.id).select('reportedStaff');
+      if (existing && existing.reportedStaff && existing.reportedStaff.toString() === excludedStaffId) {
+        return res.status(404).json({ error: 'Message not found.' });
+      }
+    }
+
     const updatedMessage = await Message.findByIdAndUpdate(
       req.params.id,
       {
@@ -141,6 +214,7 @@ router.patch('/:id/read', async (req, res) => {
 /**
  * POST /api/messages
  * Submit a new anonymous safeguarding message.
+ * Optionally names a staff member the report concerns via `reportedStaff`.
  * Returns a threadToken the sender can use to follow up.
  */
 router.post(
@@ -158,6 +232,10 @@ router.post(
       .withMessage('Message is required')
       .isLength({ max: 5000 })
       .withMessage('Message must be 5000 characters or fewer'),
+    body('reportedStaff')
+      .optional({ checkFalsy: true })
+      .isMongoId()
+      .withMessage('Invalid staff selection'),
   ],
   async (req, res) => {
     const errors = validationResult(req);
@@ -166,9 +244,13 @@ router.post(
     }
 
     try {
-      const { topic, message } = req.body;
+      const { topic, message, reportedStaff } = req.body;
 
-      const newMessage = await Message.create({ topic, message });
+      const newMessage = await Message.create({
+        topic,
+        message,
+        reportedStaff: reportedStaff || null,
+      });
 
       // Return the thread token so the sender can follow up anonymously
       return res.status(201).json({

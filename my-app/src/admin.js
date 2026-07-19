@@ -9,14 +9,16 @@ function Admin() {
     const [searchToken, setSearchToken] = useState('');
     const [selectedDate, setSelectedDate] = useState('');
     const [adminName, setAdminName] = useState('Admin');
+    const [adminId, setAdminId] = useState('');
 
-    const fetchMessages = useCallback(async (token = searchToken, date = selectedDate) => {
+    const fetchMessages = useCallback(async (token = searchToken, date = selectedDate, currentAdminId = adminId) => {
         setLoading(true);
 
         try {
             const params = new URLSearchParams();
             if (token.trim()) params.append('threadToken', token.trim());
             if (date) params.append('date', date);
+            if (currentAdminId) params.append('adminId', currentAdminId);
 
             const response = await fetch(`http://localhost:5000/api/messages?${params.toString()}`);
             const data = await response.json();
@@ -29,7 +31,7 @@ function Admin() {
         } finally {
             setLoading(false);
         }
-    }, [searchToken, selectedDate]);
+    }, [searchToken, selectedDate, adminId]);
 
     const markAsRead = async (messageId) => {
         try {
@@ -58,7 +60,9 @@ function Admin() {
         );
 
         try {
-            const response = await fetch('http://localhost:5000/api/messages/mark-all-read', { method: 'PATCH' });
+            const params = new URLSearchParams();
+            if (adminId) params.append('adminId', adminId);
+            const response = await fetch(`http://localhost:5000/api/messages/mark-all-read?${params.toString()}`, { method: 'PATCH' });
             const data = await response.json();
             if (!data.success) {
                 console.warn('mark-all-read returned non-success', data);
@@ -89,18 +93,22 @@ function Admin() {
             return;
         }
 
+        let currentAdminId = '';
         const storedAdmin = localStorage.getItem('adminUser');
         if (storedAdmin) {
             try {
                 const parsedAdmin = JSON.parse(storedAdmin);
                 setAdminName(parsedAdmin.username || parsedAdmin.email || 'Admin');
+                currentAdminId = parsedAdmin.id || parsedAdmin._id || '';
+                setAdminId(currentAdminId);
             } catch (error) {
                 console.error('Failed to parse admin user:', error);
             }
         }
 
-        fetchMessages();
-    }, [fetchMessages, navigate]);
+        fetchMessages(searchToken, selectedDate, currentAdminId);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [navigate]);
 
     return (
         <div className="auth-shell">
@@ -115,6 +123,7 @@ function Admin() {
                             <div className="header-controls">
                                 <span className="unread-badge">{messages.length} Total</span>
                         <div className="header-actions">
+                            <Link to="/admin/staff" className="mark-all-link">Manage Staff</Link>
                             <button className="mark-all-link" onClick={markAllAsRead}>Mark all as read</button>
                             <button className="auth-button logout-button" type="button" onClick={() => {
                                 localStorage.removeItem('adminAuth');
@@ -171,6 +180,11 @@ function Admin() {
                                                     <div className="message-topline">
                                                         {!isRead && <span className="status-dot" />}
                                                         <strong className="message-topic">{message.topic}</strong>
+                                                        {message.reportedStaff && (
+                                                            <span className="reported-staff-badge">
+                                                                Re: {message.reportedStaff.name}
+                                                            </span>
+                                                        )}
                                                     </div>
                                                     <p className="message-body">{message.message}</p>
                                                     <div className="message-meta">

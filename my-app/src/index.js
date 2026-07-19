@@ -10,6 +10,7 @@ import Admins from './Admins';
 import MessageDetail from './MessageDetail';
 import AdminLogin from './Admin/A-login';
 import AdminReg from './Admin/A.reg.js';
+import StaffManager from './Admin/StaffManager';
 import { Link } from 'react-router-dom';
 
 function SafeGuardingApp() {
@@ -96,6 +97,7 @@ function App() {
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin/register" element={<AdminReg />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/admin/staff" element={<StaffManager />} />
         <Route path="/admins" element={<Admins />} />
         <Route path="/message/:messageId" element={<MessageDetail />} />
       </Routes>

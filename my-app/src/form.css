@@ -58,17 +58,87 @@ body {
   color: #555;
 }
 
-input, textarea {
+input, textarea, select {
   width: 100%;
   padding: 10px;
   margin-top: 5px;
   border: 1px solid #ddd;
   border-radius: 8px;
   font-size: 1rem;
+  font-family: inherit;
+  background: white;
 }
 
 textarea {
   resize: none;
+}
+
+.field-hint {
+  margin: 6px 0 0;
+  font-size: 0.8rem;
+  color: #777;
+}
+
+.staff-manager-form {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  margin-bottom: 20px;
+}
+
+.staff-manager-form .form-group {
+  flex: 1 1 200px;
+  margin-bottom: 0;
+}
+
+.staff-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.staff-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.staff-row-name {
+  font-weight: bold;
+}
+
+.staff-row-role {
+  color: #777;
+  font-size: 0.85rem;
+  margin-left: 8px;
+}
+
+.staff-remove-btn {
+  background: #fdecea;
+  color: #b3261e;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.staff-remove-btn:hover {
+  background: #fbdbd8;
+}
+
+.reported-staff-badge {
+  display: inline-block;
+  background: #fff4e5;
+  color: #92400e;
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  margin-left: 8px;
 }
 
 .form-actions {
@@ -363,11 +433,15 @@ textarea {
 }
 
 .mark-all-link {
-  background: transparent;
-  color: #45e6c9;
+  background: #45e6c9;
+  color: white;
   border: none;
   cursor: pointer;
   font-weight: 600;
+  border-radius: 30px;
+  padding: 8px 16px;
+  transition: background 0.2s ease;
+  text-decoration: none;
 }
 
 .message-item {

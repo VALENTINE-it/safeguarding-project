@@ -30,6 +30,15 @@ const messageSchema = new mongoose.Schema(
       default: () => uuidv4(),
       index: true,
     },
+    // Optional: the staff member this report concerns. If set, and the
+    // report concerns a staff member who is also an admin, that admin
+    // must be excluded from ever seeing this message (see routes/messages.js).
+    reportedStaff: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Staff',
+      default: null,
+      index: true,
+    },
     // Chain of follow-up replies
     replies: [
       {

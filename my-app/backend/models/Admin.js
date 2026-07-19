@@ -38,6 +38,16 @@ const adminSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    // Optional link to the staff record this admin account represents.
+    // When set, this admin will never be shown safeguarding messages
+    // that report on this same staff member (see routes/messages.js).
+    staffId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Staff',
+      default: null,
+      unique: true,
+      sparse: true,
+    },
     loginHistory: [loginHistorySchema],
   },
   {

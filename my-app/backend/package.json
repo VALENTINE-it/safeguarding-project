@@ -9,7 +9,7 @@
     "test": "jest --detectOpenHandles"
   },
   "dependencies": {
-    "cors": "^2.8.5",
+    "cors": "^2.8.6",
     "crypto": "^1.0.1",
     "dotenv": "^16.6.1",
     "express": "^4.19.2",

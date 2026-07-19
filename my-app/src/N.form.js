@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './form.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
@@ -29,6 +29,26 @@ function NewMessageForm({ onBack }) {
   const [status, setStatus] = useState('idle');
   const [threadToken, setThreadToken] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [staffList, setStaffList] = useState([]);
+  const [reportedStaff, setReportedStaff] = useState('');
+
+  useEffect(() => {
+    async function loadStaff() {
+      try {
+        const res = await fetch(`${API_URL}/api/staff`);
+        const data = await res.json();
+        if (data.success) {
+          setStaffList(data.staff || []);
+        }
+      } catch (err) {
+        // If the staff directory can't be loaded, the reporter can still
+        // submit a general report without naming anyone specific.
+        console.error('Failed to load staff list:', err);
+      }
+    }
+
+    loadStaff();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -39,7 +59,7 @@ function NewMessageForm({ onBack }) {
       const res = await fetch(`${API_URL}/api/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic, message }),
+        body: JSON.stringify({ topic, message, reportedStaff: reportedStaff || undefined }),
       });
 
       const data = await res.json();
@@ -129,6 +149,28 @@ function NewMessageForm({ onBack }) {
               required
               maxLength={5000}
             />
+          </label>
+
+          <label className="form-group">
+            <span>IS THIS ABOUT A SPECIFIC STAFF MEMBER? (OPTIONAL)</span>
+            <select
+              name="reportedStaff"
+              value={reportedStaff}
+              onChange={(e) => setReportedStaff(e.target.value)}
+            >
+              <option value="">Not about a specific staff member</option>
+              {staffList.map((staffMember) => (
+                <option key={staffMember.id} value={staffMember.id}>
+                  {staffMember.name}
+                  {staffMember.role ? ` — ${staffMember.role}` : ''}
+                </option>
+              ))}
+            </select>
+            <p className="field-hint">
+              If your report is about a staff member, selecting them here
+              ensures they will never be able to view this message, even if
+              they have admin access.
+            </p>
           </label>
 
           {status === 'error' && (

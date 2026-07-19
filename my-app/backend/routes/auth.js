@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const Admin = require('../models/Admin');
+const Staff = require('../models/Staff');
 
 router.post(
   '/register',
@@ -9,6 +10,9 @@ router.post(
     body('username').trim().notEmpty().withMessage('Username is required').isLength({ min: 3, max: 50 }),
     body('email').trim().isEmail().withMessage('A valid email is required'),
     body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters long'),
+    // Optional: link this admin account to a staff record so that
+    // reports about this staff member are hidden from this account.
+    body('staffId').optional({ checkFalsy: true }).isMongoId().withMessage('Invalid staff selection'),
   ],
   async (req, res) => {
     const errors = validationResult(req);
@@ -16,7 +20,7 @@ router.post(
       return res.status(422).json({ errors: errors.array() });
     }
 
-    const { username, email, password } = req.body;
+    const { username, email, password, staffId } = req.body;
 
     try {
       const existing = await Admin.findOne({ $or: [{ username }, { email }] });
@@ -29,7 +33,22 @@ router.post(
         return res.status(403).json({ error: 'Admin registration limit reached. Only 3 admin accounts are allowed.' });
       }
 
-      const admin = new Admin({ username, email });
+      let resolvedStaffId = null;
+      if (staffId) {
+        const staffMember = await Staff.findById(staffId);
+        if (!staffMember) {
+          return res.status(400).json({ error: 'Selected staff member could not be found.' });
+        }
+
+        const alreadyLinked = await Admin.findOne({ staffId });
+        if (alreadyLinked) {
+          return res.status(409).json({ error: 'That staff member is already linked to another admin account.' });
+        }
+
+        resolvedStaffId = staffId;
+      }
+
+      const admin = new Admin({ username, email, staffId: resolvedStaffId });
       admin.setPassword(password);
       await admin.save();
 

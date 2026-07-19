@@ -1,14 +1,34 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import '../form.css';
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 function AdminReg() {
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [staffId, setStaffId] = useState('');
+    const [staffList, setStaffList] = useState([]);
     const [error, setError] = useState('');
     const navigate = useNavigate();
+
+    useEffect(() => {
+        async function loadStaff() {
+            try {
+                const res = await fetch(`${API_URL}/api/staff`);
+                const data = await res.json();
+                if (data.success) {
+                    setStaffList(data.staff || []);
+                }
+            } catch (err) {
+                console.error('Failed to load staff list:', err);
+            }
+        }
+
+        loadStaff();
+    }, []);
 
     const handleSubmit = async (event) => {
         event.preventDefault();
@@ -28,7 +48,7 @@ function AdminReg() {
             const response = await fetch('http://localhost:5000/api/auth/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, email, password }),
+                body: JSON.stringify({ username, email, password, staffId: staffId || undefined }),
             });
             const data = await response.json();
 
@@ -94,6 +114,27 @@ function AdminReg() {
                             onChange={(e) => setConfirmPassword(e.target.value)}
                             placeholder="Confirm Password"
                         />
+                    </label>
+
+                    <label className="auth-field">
+                        Are you also a staff member? (optional)
+                        <select
+                            className="auth-input"
+                            value={staffId}
+                            onChange={(e) => setStaffId(e.target.value)}
+                        >
+                            <option value="">Not applicable</option>
+                            {staffList.map((member) => (
+                                <option key={member.id} value={member.id}>
+                                    {member.name}
+                                    {member.role ? ` — ${member.role}` : ''}
+                                </option>
+                            ))}
+                        </select>
+                        <p className="field-hint">
+                            Linking your account to your staff record means you will never
+                            see any report submitted about yourself.
+                        </p>
                     </label>
 
                     {error && <p className="form-error">{error}</p>}

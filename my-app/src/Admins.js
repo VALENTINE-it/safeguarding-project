@@ -3,10 +3,10 @@ import { Link } from 'react-router-dom';
 import './form.css';
 
 const adminsData = [
-  { id: '1', name: 'VIP Clients', time: '4 ad accounts', dates: '231 active campaigns', period: 'Feb 2020' },
-  { id: '2', name: 'Audiences A', time: '3 ad accounts', dates: '150 active entries', period: 'Mar 2021' },
-  { id: '3', name: 'Audiences B', time: '2 ad accounts', dates: '88 active entries', period: 'Jun 2021' },
-  { id: '4', name: 'Audiences C', time: '1 ad account', dates: '12 active campaigns', period: 'Sep 2022' },
+  { id: '1', name: 'VIP Admin', time: 'N/A', dates: ' N/A', period: 'N/A' },
+  { id: '2', name: 'Admin-Name A', time: 'N/A', dates: ' N/A', period: 'N/A' },
+  { id: '3', name: 'Admin-Name B', time: 'N/A', dates: ' N/A', period: 'N/A' },
+  { id: '4', name: 'Admin-Name C', time: 'N/A', dates: ' N/A', period: 'N/A' },
 ];
 
 function Admins() {

@@ -6,7 +6,9 @@ import reportWebVitals from './reportWebVitals';
 import FollowUpForm from './F.form';
 import NewMessageForm from './N.form';
 import Admin from './admin';
-import Admins from './Admins';
+import SuperAdmin from './Admin/SuperAdmin';
+import SuperAdminLogin from './Admin/SuperAdminLogin';
+import SuperAdminRegister from './Admin/SuperAdminRegister';
 import MessageDetail from './MessageDetail';
 import AdminLogin from './Admin/A-login';
 import AdminReg from './Admin/A.reg.js';
@@ -75,8 +77,8 @@ function SafeGuardingApp() {
               <div className="badge">🔒 Anonymous Messaging</div>
             </div>
             <div className="secondary-link-row">
-              <Link to="/admins" className="auth-link">
-                View Admins Page
+              <Link to="/admin/super" className="auth-link">
+                Super Admin Portal
               </Link>
               <Link to="/admin/login" className="auth-link">
                 Admin Login
@@ -98,7 +100,9 @@ function App() {
         <Route path="/admin/register" element={<AdminReg />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/admin/staff" element={<StaffManager />} />
-        <Route path="/admins" element={<Admins />} />
+        <Route path="/admin/super" element={<SuperAdmin />} />
+        <Route path="/admin/super/login" element={<SuperAdminLogin />} />
+        <Route path="/admin/super/register" element={<SuperAdminRegister />} />
         <Route path="/message/:messageId" element={<MessageDetail />} />
       </Routes>
     </BrowserRouter>

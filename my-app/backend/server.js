@@ -55,6 +55,7 @@ app.use(express.urlencoded({ extended: false, limit: '10kb' }));
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/super-auth', require('./routes/superAuth'));
 app.use('/api/messages', messageLimiter, require('./routes/messages'));
 app.use('/api/threads', require('./routes/threads'));
 app.use('/api/staff', require('./routes/staff'));

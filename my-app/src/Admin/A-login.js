@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import '../form.css';
 
 function AdminLogin() {
@@ -70,9 +70,7 @@ function AdminLogin() {
 
           <button className="auth-button" type="submit">Login</button>
 
-          <div className="auth-link-row">
-            <Link className="auth-link" to="/admin/register">Create Account</Link>
-          </div>
+
         </form>
       </div>
     </div>

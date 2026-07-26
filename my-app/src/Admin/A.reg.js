@@ -12,27 +12,46 @@ function AdminReg() {
     const [staffId, setStaffId] = useState('');
     const [staffList, setStaffList] = useState([]);
     const [error, setError] = useState('');
+    const [adminCount, setAdminCount] = useState(0);
+    const [limitReached, setLimitReached] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
-        async function loadStaff() {
+        async function loadInitialData() {
             try {
-                const res = await fetch(`${API_URL}/api/staff`);
-                const data = await res.json();
-                if (data.success) {
-                    setStaffList(data.staff || []);
+                // Check admin count and limit (max 2)
+                const authRes = await fetch(`${API_URL}/api/auth/admins`);
+                const authData = await authRes.json();
+                if (authData.success) {
+                    setAdminCount(authData.count || 0);
+                    if (authData.limitReached || authData.count >= 2) {
+                        setLimitReached(true);
+                        setError('Admin registration limit reached. Maximum of 2 administrator accounts allowed.');
+                    }
+                }
+
+                // Load staff list
+                const staffRes = await fetch(`${API_URL}/api/staff`);
+                const staffData = await staffRes.json();
+                if (staffData.success) {
+                    setStaffList(staffData.staff || []);
                 }
             } catch (err) {
-                console.error('Failed to load staff list:', err);
+                console.error('Failed to load initial registration data:', err);
             }
         }
 
-        loadStaff();
+        loadInitialData();
     }, []);
 
     const handleSubmit = async (event) => {
         event.preventDefault();
         setError('');
+
+        if (limitReached || adminCount >= 2) {
+            setError('Admin registration limit reached. Maximum of 2 admin accounts allowed.');
+            return;
+        }
 
         if (!username || !email || !password || !confirmPassword) {
             setError('Please fill in all fields.');
@@ -45,7 +64,7 @@ function AdminReg() {
         }
 
         try {
-            const response = await fetch('http://localhost:5000/api/auth/register', {
+            const response = await fetch(`${API_URL}/api/auth/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, email, password, staffId: staffId || undefined }),
@@ -55,10 +74,13 @@ function AdminReg() {
             if (!response.ok) {
                 const message = data.error || data.errors?.[0]?.msg || 'Unable to register admin.';
                 setError(message);
+                if (response.status === 403) {
+                    setLimitReached(true);
+                }
                 return;
             }
 
-            navigate('/admin/login');
+            navigate('/admin/super');
         } catch (err) {
             console.error('Registration error:', err);
             setError('Unable to reach server. Please try again later.');
@@ -71,6 +93,13 @@ function AdminReg() {
                 <h1 className="auth-title">Admin Registration</h1>
                 <p className="auth-copy">Create a secure administrator account to manage safeguarding operations.</p>
 
+                {limitReached && (
+                    <div className="registration-limit-warning" style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #f87171', padding: '12px 16px', borderRadius: '10px', marginBottom: '1rem', color: '#ef4444' }}>
+                        <strong>Registration Limit Reached</strong>
+                        <p style={{ margin: '4px 0 0', fontSize: '0.85rem' }}>Maximum of 2 administrator accounts can be registered ({adminCount}/2 slots filled).</p>
+                    </div>
+                )}
+
                 <form className="auth-form" onSubmit={handleSubmit}>
                     <label className="auth-field">
                         Username
@@ -78,6 +107,7 @@ function AdminReg() {
                             className="auth-input"
                             type="text"
                             value={username}
+                            disabled={limitReached}
                             onChange={(e) => setUsername(e.target.value)}
                             placeholder="Username"
                         />
@@ -89,6 +119,7 @@ function AdminReg() {
                             className="auth-input"
                             type="email"
                             value={email}
+                            disabled={limitReached}
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="Email"
                         />
@@ -100,6 +131,7 @@ function AdminReg() {
                             className="auth-input"
                             type="password"
                             value={password}
+                            disabled={limitReached}
                             onChange={(e) => setPassword(e.target.value)}
                             placeholder="Password"
                         />
@@ -111,6 +143,7 @@ function AdminReg() {
                             className="auth-input"
                             type="password"
                             value={confirmPassword}
+                            disabled={limitReached}
                             onChange={(e) => setConfirmPassword(e.target.value)}
                             placeholder="Confirm Password"
                         />
@@ -121,6 +154,7 @@ function AdminReg() {
                         <select
                             className="auth-input"
                             value={staffId}
+                            disabled={limitReached}
                             onChange={(e) => setStaffId(e.target.value)}
                         >
                             <option value="">Not applicable</option>
@@ -134,10 +168,12 @@ function AdminReg() {
                     </label>
 
                     {error && <p className="form-error">{error}</p>}
-                    <button className="auth-button" type="submit">Register</button>
+                    <button className="auth-button" type="submit" disabled={limitReached}>
+                        {limitReached ? 'Registration Closed' : 'Register Admin'}
+                    </button>
 
                     <div className="auth-link-row">
-                        <Link className="auth-link" to="/admin/login">Already have an account? Login</Link>
+                        <Link className="auth-link" to="/admin/super">Back to Super Admin Portal</Link>
                     </div>
                 </form>
             </div>

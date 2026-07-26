@@ -30,8 +30,8 @@ router.post(
       }
 
       const adminCount = await Admin.countDocuments();
-      if (adminCount >= 3) {
-        return res.status(403).json({ error: 'Admin registration limit reached. Only 3 admin accounts are allowed.' });
+      if (adminCount >= 2) {
+        return res.status(403).json({ error: 'Admin registration limit reached. Maximum of 2 administrator accounts allowed.' });
       }
 
       let resolvedStaffId = null;
@@ -102,5 +102,31 @@ router.post(
     }
   }
 );
+
+/**
+ * GET /api/auth/admins
+ * List registered admin accounts and current registration count (max 2)
+ */
+router.get('/admins', async (req, res) => {
+  try {
+    const admins = await Admin.find()
+      .select('username email staffId createdAt loginHistory')
+      .populate('staffId', 'name role');
+    
+    const adminCount = admins.length;
+    const limitReached = adminCount >= 2;
+
+    return res.json({
+      success: true,
+      count: adminCount,
+      limit: 2,
+      limitReached,
+      admins: admins.map(a => a.toJSON())
+    });
+  } catch (err) {
+    console.error('Error fetching admin accounts:', err);
+    return res.status(500).json({ error: 'Failed to fetch admin accounts.' });
+  }
+});
 
 module.exports = router;

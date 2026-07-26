@@ -170,12 +170,7 @@ function Admin() {
             )}
           </button>
 
-          <Link to="/admin/staff" className="nav-action-link">
-            Staff
-          </Link>
-          <Link to="/admins" className="nav-action-link">
-            Admins
-          </Link>
+
           <button
             type="button"
             className="nav-logout-btn"

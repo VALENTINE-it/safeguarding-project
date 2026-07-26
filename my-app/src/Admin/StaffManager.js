@@ -155,8 +155,8 @@ function StaffManager() {
         )}
 
         <div className="page-links-row">
-          <Link to="/admin" className="auth-button">
-            Back to Admin Dashboard
+          <Link to="/admin/super" className="auth-button">
+            Back to Super Admin Portal
           </Link>
         </div>
       </div>

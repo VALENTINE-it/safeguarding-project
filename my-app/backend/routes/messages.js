@@ -200,6 +200,67 @@ router.get('/:id', async (req, res) => {
 });
 
 /**
+ * MARK ALL UNREAD MESSAGES AS READ
+ */
+router.patch('/mark-all-read', async (req, res) => {
+  try {
+    let baseQuery = { isRead: false, isDeleted: false };
+    const excludedStaffId = await getExcludedStaffId(req);
+    const query = buildSafeQuery(baseQuery, excludedStaffId);
+
+    const result = await Message.updateMany(query, { isRead: true, readAt: new Date() });
+    const modified = result.modifiedCount ?? result.nModified ?? 0;
+
+    return res.json({
+      success: true,
+      modifiedCount: modified
+    });
+  } catch (err) {
+    console.error('Mark all as read error:', err);
+    res.status(500).json({ error: 'Failed to mark messages as read.' });
+  }
+});
+
+/**
+ * MARK ONE MESSAGE AS READ
+ */
+router.patch('/:id/read', async (req, res) => {
+  try {
+    const excludedStaffId = await getExcludedStaffId(req);
+    if (excludedStaffId) {
+      const existing = await Message.findById(req.params.id).select('reportedStaff');
+      if (existing && existing.reportedStaff && existing.reportedStaff.toString() === excludedStaffId) {
+        return res.status(404).json({ error: 'Message not found.' });
+      }
+    }
+
+    const updatedMessage = await withReportedStaffPopulated(
+      Message.findByIdAndUpdate(
+        req.params.id,
+        { isRead: true, readAt: new Date() },
+        { new: true }
+      )
+    );
+
+    if (!updatedMessage) {
+      return res.status(404).json({ error: 'Message not found.' });
+    }
+
+    res.json({
+      success: true,
+      message: {
+        ...updatedMessage.toJSON(),
+        id: updatedMessage._id.toString()
+      }
+    });
+
+  } catch (err) {
+    console.error('Mark read error:', err);
+    res.status(500).json({ error: 'Failed to mark message as read.' });
+  }
+});
+
+/**
  * CREATE MESSAGE
  */
 router.post(

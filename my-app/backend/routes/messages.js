@@ -1,266 +1,239 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
+
 const { body, validationResult } = require('express-validator');
+
 const Message = require('../models/Message');
 const Admin = require('../models/Admin');
 
 /**
- * Resolve the requesting admin's linked staffId (if any) from an
- * `adminId` query param sent by the frontend. Returns null if no
- * admin was identified or the admin isn't linked to a staff record.
- *
- * NOTE: this app currently has no session/JWT layer — admin identity
- * is passed by the client the same way the rest of this codebase
- * already handles it (no auth middleware on any /api/messages route).
- * That means this check is a data-hiding safeguard, not a security
- * boundary: it stops a linked admin's own dashboard from ever
- * displaying a report about them, but a determined client could
- * still omit/alter adminId. Adding real authenticated sessions is a
- * good follow-up but is out of scope for this change.
+ * Get staffId linked to admin
  */
 async function getExcludedStaffId(req) {
-  const { adminId } = req.query;
-  if (!adminId) return null;
-
   try {
+    const adminId = req.query.adminId;
+
+    if (!adminId) return null;
+
     const admin = await Admin.findById(adminId).select('staffId');
-    return admin && admin.staffId ? admin.staffId.toString() : null;
+
+    if (admin && admin.staffId) {
+      return admin.staffId.toString();
+    }
+
+    return null;
   } catch (err) {
-    // Invalid/unknown adminId — treat as "no admin identified"
+    console.error('Error resolving staffId:', err);
     return null;
   }
 }
 
+/**
+ * Populate helper
+ */
 function withReportedStaffPopulated(query) {
   return query.populate('reportedStaff', 'name role');
 }
 
+/**
+ * HARD FILTER (final protection)
+ */
+function filterOutOwnReports(messages, excludedStaffId) {
+  if (!excludedStaffId) return messages;
+
+  return messages.filter(msg => {
+    if (!msg.reportedStaff) return true;
+
+    return msg.reportedStaff._id.toString() !== excludedStaffId;
+  });
+}
+
+/**
+ * BUILD SAFE QUERY
+ */
+function buildSafeQuery(baseQuery, excludedStaffId) {
+  if (!excludedStaffId) return baseQuery;
+
+  return {
+    ...baseQuery,
+    $or: [
+      { reportedStaff: null }, // ✅ include null
+      {
+        reportedStaff: {
+          $ne: new mongoose.Types.ObjectId(excludedStaffId)
+        }
+      }
+    ]
+  };
+}
+
+/**
+ * GET ALL MESSAGES
+ */
 router.get('/', async (req, res) => {
   try {
     const { threadToken, filter, date } = req.query;
-    const query = { isDeleted: false };
+
+    let baseQuery = { isDeleted: false };
 
     const excludedStaffId = await getExcludedStaffId(req);
-    if (excludedStaffId) {
-      query.reportedStaff = { $ne: excludedStaffId };
-    }
 
     if (threadToken) {
-      query.threadToken = threadToken;
+      baseQuery.threadToken = threadToken;
     }
 
     if (date) {
-      const startDate = new Date(date);
-      const endDate = new Date(startDate);
-      endDate.setDate(endDate.getDate() + 1);
-      query.createdAt = { $gte: startDate, $lt: endDate };
-    } else if (filter) {
+      const start = new Date(date);
+      const end = new Date(start);
+      end.setDate(end.getDate() + 1);
+      baseQuery.createdAt = { $gte: start, $lt: end };
+    }
+
+    if (filter) {
       const now = new Date();
       let startDate;
 
       if (filter === 'today') {
         startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       } else if (filter === 'last7') {
-        startDate = new Date(now);
+        startDate = new Date();
         startDate.setDate(startDate.getDate() - 7);
       } else if (filter === 'last30') {
-        startDate = new Date(now);
+        startDate = new Date();
         startDate.setDate(startDate.getDate() - 30);
-      } else if (filter === 'year') {
-        startDate = new Date(now.getFullYear(), 0, 1);
       }
 
       if (startDate) {
-        query.createdAt = { $gte: startDate };
+        baseQuery.createdAt = { $gte: startDate };
       }
     }
 
-    const messages = await withReportedStaffPopulated(Message.find(query)).sort({ createdAt: -1 });
-    const formattedMessages = messages.map((message) => ({
-      ...message.toJSON(),
-      id: message._id.toString(),
-    }));
+    const query = buildSafeQuery(baseQuery, excludedStaffId);
 
-    return res.status(200).json({
+    let messages = await withReportedStaffPopulated(
+      Message.find(query).sort({ createdAt: -1 })
+    );
+
+    messages = filterOutOwnReports(messages, excludedStaffId);
+
+    return res.json({
       success: true,
-      messages: formattedMessages,
+      messages: messages.map(m => ({
+        ...m.toJSON(),
+        id: m._id.toString()
+      }))
     });
+
   } catch (err) {
-    console.error('Error fetching messages:', err);
-    return res.status(500).json({ error: 'Failed to load messages.' });
+    console.error('GET messages error:', err);
+    res.status(500).json({ error: 'Failed to load messages.' });
   }
 });
 
+/**
+ * GET UNREAD
+ */
 router.get('/unread', async (req, res) => {
   try {
-    const query = { isRead: false, isDeleted: false };
+    let baseQuery = { isRead: false, isDeleted: false };
 
     const excludedStaffId = await getExcludedStaffId(req);
-    if (excludedStaffId) {
-      query.reportedStaff = { $ne: excludedStaffId };
-    }
 
-    const messages = await withReportedStaffPopulated(Message.find(query)).sort({ createdAt: -1 });
-    const formattedMessages = messages.map((message) => ({
-      ...message.toJSON(),
-      id: message._id.toString(),
-    }));
+    const query = buildSafeQuery(baseQuery, excludedStaffId);
 
-    return res.status(200).json({
+    let messages = await withReportedStaffPopulated(
+      Message.find(query).sort({ createdAt: -1 })
+    );
+
+    messages = filterOutOwnReports(messages, excludedStaffId);
+
+    res.json({
       success: true,
-      messages: formattedMessages,
+      messages: messages.map(m => ({
+        ...m.toJSON(),
+        id: m._id.toString()
+      }))
     });
+
   } catch (err) {
-    console.error('Error fetching unread messages:', err);
-    return res.status(500).json({ error: 'Failed to load unread messages.' });
+    console.error('Unread error:', err);
+    res.status(500).json({ error: 'Failed to load unread messages.' });
   }
 });
 
-// Mark all unread messages as read (must come before /:id/read)
-router.patch('/mark-all-read', async (req, res) => {
-  try {
-    const query = { isRead: false, isDeleted: false };
-
-    const excludedStaffId = await getExcludedStaffId(req);
-    if (excludedStaffId) {
-      // Never touch (or even acknowledge) messages reported against
-      // this admin's own staff record.
-      query.reportedStaff = { $ne: excludedStaffId };
-    }
-
-    const result = await Message.updateMany(query, { isRead: true, readAt: new Date() });
-
-    // Mongoose returned object shape varies by version — prefer modifiedCount
-    const modified = result.modifiedCount ?? result.nModified ?? 0;
-
-    return res.status(200).json({
-      success: true,
-      modifiedCount: modified,
-    });
-  } catch (err) {
-    console.error('Error marking all messages as read:', err);
-    return res.status(500).json({ error: 'Failed to mark messages as read.' });
-  }
-});
-
+/**
+ * GET ONE MESSAGE
+ */
 router.get('/:id', async (req, res) => {
   try {
-    const message = await withReportedStaffPopulated(Message.findById(req.params.id));
+    const excludedStaffId = await getExcludedStaffId(req);
+
+    let message = await withReportedStaffPopulated(
+      Message.findById(req.params.id)
+    );
+
     if (!message || message.isDeleted) {
-      return res.status(404).json({ success: false, error: 'Message not found.' });
+      return res.status(404).json({ error: 'Message not found.' });
     }
 
-    const excludedStaffId = await getExcludedStaffId(req);
     if (
       excludedStaffId &&
       message.reportedStaff &&
       message.reportedStaff._id.toString() === excludedStaffId
     ) {
-      // Respond the same way as "not found" — an admin who was
-      // reported in a message should never learn that a report
-      // about them exists.
-      return res.status(404).json({ success: false, error: 'Message not found.' });
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: {
-        ...message.toJSON(),
-        id: message._id.toString(),
-      },
-    });
-  } catch (err) {
-    console.error('Error fetching message by id:', err);
-    return res.status(500).json({ success: false, error: 'Failed to load message.' });
-  }
-});
-
-router.patch('/:id/read', async (req, res) => {
-  try {
-    const excludedStaffId = await getExcludedStaffId(req);
-    if (excludedStaffId) {
-      const existing = await Message.findById(req.params.id).select('reportedStaff');
-      if (existing && existing.reportedStaff && existing.reportedStaff.toString() === excludedStaffId) {
-        return res.status(404).json({ error: 'Message not found.' });
-      }
-    }
-
-    const updatedMessage = await Message.findByIdAndUpdate(
-      req.params.id,
-      {
-        isRead: true,
-        readAt: new Date(),
-      },
-      { new: true }
-    );
-
-    if (!updatedMessage) {
       return res.status(404).json({ error: 'Message not found.' });
     }
 
-    return res.status(200).json({
+    res.json({
       success: true,
       message: {
-        ...updatedMessage.toJSON(),
-        id: updatedMessage._id.toString(),
-      },
+        ...message.toJSON(),
+        id: message._id.toString()
+      }
     });
+
   } catch (err) {
-    console.error('Error marking message as read:', err);
-    return res.status(500).json({ error: 'Failed to mark message as read.' });
+    console.error('Get one error:', err);
+    res.status(500).json({ error: 'Failed to load message.' });
   }
 });
 
 /**
- * POST /api/messages
- * Submit a new anonymous safeguarding message.
- * Optionally names a staff member the report concerns via `reportedStaff`.
- * Returns a threadToken the sender can use to follow up.
+ * CREATE MESSAGE
  */
 router.post(
   '/',
   [
-    body('topic')
-      .trim()
-      .notEmpty()
-      .withMessage('Topic is required')
-      .isLength({ max: 200 })
-      .withMessage('Topic must be 200 characters or fewer'),
-    body('message')
-      .trim()
-      .notEmpty()
-      .withMessage('Message is required')
-      .isLength({ max: 5000 })
-      .withMessage('Message must be 5000 characters or fewer'),
-    body('reportedStaff')
-      .optional({ checkFalsy: true })
-      .isMongoId()
-      .withMessage('Invalid staff selection'),
+    body('topic').notEmpty(),
+    body('message').notEmpty(),
+    body('reportedStaff').optional().isMongoId(),
   ],
   async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(422).json({ errors: errors.array() });
-    }
-
     try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(422).json({ errors: errors.array() });
+      }
+
       const { topic, message, reportedStaff } = req.body;
 
-      const newMessage = await Message.create({
+      const newMessage = new Message({
         topic,
         message,
         reportedStaff: reportedStaff || null,
       });
 
-      // Return the thread token so the sender can follow up anonymously
-      return res.status(201).json({
+      await newMessage.save();
+
+      res.status(201).json({
         success: true,
-        threadToken: newMessage.threadToken,
-        message: 'Your message has been sent securely.',
+        threadToken: newMessage.threadToken
       });
+
     } catch (err) {
-      console.error('Error creating message:', err);
-      return res.status(500).json({ error: 'Failed to send message. Please try again.' });
+      console.error('Create error:', err);
+      res.status(500).json({ error: 'Failed to send message.' });
     }
   }
 );

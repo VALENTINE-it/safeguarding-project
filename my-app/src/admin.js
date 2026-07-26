@@ -35,9 +35,13 @@ function Admin() {
 
     const markAsRead = async (messageId) => {
         try {
-            const response = await fetch(`http://localhost:5000/api/messages/${messageId}/read`, {
-                method: 'PATCH',
-            });
+            const params = new URLSearchParams();
+            if (adminId) params.append('adminId', adminId);
+            
+            const response = await fetch(
+                `http://localhost:5000/api/messages/${messageId}/read?${params.toString()}`, 
+                { method: 'PATCH' }
+            );
             const data = await response.json();
 
             if (data.success) {

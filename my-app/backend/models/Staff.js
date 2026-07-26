@@ -1,17 +1,5 @@
 const mongoose = require('mongoose');
 
-/**
- * Staff schema
- *
- * Represents a staff member of the organisation. This list is
- * maintained by the organisation (via the admin "Manage Staff" page)
- * and is shown to reporters so they can optionally indicate that
- * their report concerns a specific staff member.
- *
- * If an admin account is linked to a staff record (Admin.staffId),
- * that admin will never be shown messages where `reportedStaff`
- * matches their own staff record — see routes/messages.js.
- */
 const staffSchema = new mongoose.Schema(
   {
     name: {

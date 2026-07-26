@@ -20,6 +20,12 @@ router.post(
       return res.status(422).json({ errors: errors.array() });
     }
 
+    const token = jwt.sign(
+  { id: admin._id }, // 👈 MUST EXIST
+  process.env.JWT_SECRET,
+  { expiresIn: '1d' }
+);
+
     const { username, email, password, staffId } = req.body;
 
     try {

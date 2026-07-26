@@ -1,8 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
+const jwt = require('jsonwebtoken');
 const Admin = require('../models/Admin');
 const Staff = require('../models/Staff');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'safeguarding_secret_key_2026';
 
 router.post(
   '/register',
@@ -10,8 +13,6 @@ router.post(
     body('username').trim().notEmpty().withMessage('Username is required').isLength({ min: 3, max: 50 }),
     body('email').trim().isEmail().withMessage('A valid email is required'),
     body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters long'),
-    // Optional: link this admin account to a staff record so that
-    // reports about this staff member are hidden from this account.
     body('staffId').optional({ checkFalsy: true }).isMongoId().withMessage('Invalid staff selection'),
   ],
   async (req, res) => {
@@ -20,16 +21,10 @@ router.post(
       return res.status(422).json({ errors: errors.array() });
     }
 
-    const token = jwt.sign(
-  { id: admin._id }, // 👈 MUST EXIST
-  process.env.JWT_SECRET,
-  { expiresIn: '1d' }
-);
-
     const { username, email, password, staffId } = req.body;
 
     try {
-      const existing = await Admin.findOne({ $or: [{ username }, { email }] });
+      const existing = await Admin.findOne({ $or: [{ username }, { email: email.toLowerCase() }] });
       if (existing) {
         return res.status(409).json({ error: 'Username or email already exists.' });
       }
@@ -54,11 +49,13 @@ router.post(
         resolvedStaffId = staffId;
       }
 
-      const admin = new Admin({ username, email, staffId: resolvedStaffId });
+      const admin = new Admin({ username, email: email.toLowerCase(), staffId: resolvedStaffId });
       admin.setPassword(password);
       await admin.save();
 
-      return res.status(201).json({ success: true, admin: admin.toJSON() });
+      const token = jwt.sign({ id: admin._id }, JWT_SECRET, { expiresIn: '1d' });
+
+      return res.status(201).json({ success: true, token, admin: admin.toJSON() });
     } catch (err) {
       console.error('Admin registration error:', err);
       return res.status(500).json({ error: 'Unable to register admin account.' });
@@ -89,13 +86,16 @@ router.post(
         return res.status(401).json({ error: 'Invalid username/email or password.' });
       }
 
+      if (!admin.loginHistory) admin.loginHistory = [];
       admin.loginHistory.push({
         ip: req.ip,
         userAgent: req.get('User-Agent') || 'unknown',
       });
       await admin.save();
 
-      return res.status(200).json({ success: true, admin: admin.toJSON() });
+      const token = jwt.sign({ id: admin._id }, JWT_SECRET, { expiresIn: '1d' });
+
+      return res.status(200).json({ success: true, token, admin: admin.toJSON() });
     } catch (err) {
       console.error('Admin login error:', err);
       return res.status(500).json({ error: 'Unable to authenticate admin.' });

@@ -131,10 +131,6 @@ function AdminReg() {
                                 </option>
                             ))}
                         </select>
-                        <p className="field-hint">
-                            Linking your account to your staff record means you will never
-                            see any report submitted about yourself.
-                        </p>
                     </label>
 
                     {error && <p className="form-error">{error}</p>}

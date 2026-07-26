@@ -171,10 +171,10 @@ function Admin() {
           </button>
 
           <Link to="/admin/staff" className="nav-action-link">
-            👥 Staff
+            Staff
           </Link>
           <Link to="/admins" className="nav-action-link">
-            📋 Admins
+            Admins
           </Link>
           <button
             type="button"
@@ -201,17 +201,14 @@ function Admin() {
           </div>
           <div className="hero-stats">
             <div className="stat-card">
-              <span className="stat-icon">📩</span>
               <span className="stat-value">{messages.length}</span>
               <span className="stat-label">Total Reports</span>
             </div>
-            <div className="stat-card highlight-unread">
-              <span className="stat-icon">📬</span>
+            <div className="stat-card highlight-unread"> 
               <span className="stat-value">{unreadMessages.length}</span>
               <span className="stat-label">Unread</span>
             </div>
             <div className="stat-card highlight-read">
-              <span className="stat-icon">✅</span>
               <span className="stat-value">{readMessages.length}</span>
               <span className="stat-label">Reviewed</span>
             </div>

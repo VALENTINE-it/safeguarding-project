@@ -86,18 +86,18 @@ function NewMessageForm({ onBack }) {
     return (
       <div className="form-container">
         <div className="security-banner">
-          🔒 END-TO-END ENCRYPTION ACTIVE • ZERO-KNOWLEDGE PROTOCOL
+          END-TO-END ENCRYPTION ACTIVE • ZERO-KNOWLEDGE PROTOCOL
         </div>
 
         <div className="form-card">
-          <h2>✅ Message Sent</h2>
+          <h2>Message Sent</h2>
           <p className="subtitle">
             Your message has been delivered securely. Copy your token below —
             it is the only way to follow up on this thread.
           </p>
 
           <div className="token-box">
-            <strong>🔑 Your Secure Thread Token</strong>
+            <strong>Your Secure Thread Token</strong>
             <CopyText text={threadToken} />
             <p className="token-note">
               Copy this token and keep it safe. It will not be shown again.
@@ -115,7 +115,7 @@ function NewMessageForm({ onBack }) {
   return (
     <div className="form-container">
       <div className="security-banner">
-        🔒 END-TO-END ENCRYPTION ACTIVE • ZERO-KNOWLEDGE PROTOCOL
+        END-TO-END ENCRYPTION ACTIVE • ZERO-KNOWLEDGE PROTOCOL
       </div>
 
       <div className="form-card">
@@ -174,7 +174,7 @@ function NewMessageForm({ onBack }) {
           </label>
 
           {status === 'error' && (
-            <div className="error-banner">⚠️ {errorMsg}</div>
+            <div className="error-banner">{errorMsg}</div>
           )}
 
           <div className="form-actions">
@@ -195,7 +195,7 @@ function NewMessageForm({ onBack }) {
 
       <div className="info-section">
         <div className="info-card">
-          <h4>🛡️ Identity Masking</h4>
+          <h4>Identity Masking</h4>
           <p>Your IP address and device info are hidden.</p>
         </div>
 

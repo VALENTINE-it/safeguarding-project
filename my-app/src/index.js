@@ -25,7 +25,7 @@ function SafeGuardingApp() {
   return (
     <>
       <div className="Header">
-        <h1>🛡️ SAFEGUARDING</h1>
+        <h1>SAFEGUARDING</h1>
       </div>
 
       <div className="Body">
@@ -74,13 +74,13 @@ function SafeGuardingApp() {
                 Continue
               </button>
 
-              <div className="badge">🔒 Anonymous Messaging</div>
+              <div className="badge">Anonymous Messaging</div>
             </div>
             <div className="secondary-link-row">
-              <Link to="/admin/super" className="auth-link">
+              <Link to="/admin/super" className="portal-link portal-link-primary">
                 Super Admin Portal
               </Link>
-              <Link to="/admin/login" className="auth-link">
+              <Link to="/admin/login" className="portal-link portal-link-secondary">
                 Admin Login
               </Link>
             </div>

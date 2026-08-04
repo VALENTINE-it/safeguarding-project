@@ -38,17 +38,17 @@ function SuperAdmin() {
         setMessages(msgData.messages || []);
       }
 
-      // 2. Fetch admin accounts and count (limit = 2)
+      // 2. Fetch admin accounts and count (limit = 3) from Admin database
       const authRes = await fetch(`${API_URL}/api/auth/admins`);
       const authData = await authRes.json();
       if (authData.success) {
         setAdmins(authData.admins || []);
         const count = authData.count || (authData.admins ? authData.admins.length : 0);
         setAdminCount(count);
-        setLimitReached(count >= 2 || authData.limitReached);
+        setLimitReached(count >= 3 || authData.limitReached);
       }
     } catch (err) {
-      console.error('Failed to fetch Super Admin data:', err);
+      console.error('Failed to fetch Super Admin dashboard data:', err);
     } finally {
       setLoading(false);
     }
@@ -150,7 +150,7 @@ function SuperAdmin() {
         </div>
 
         <div className="super-header-right">
-          {/* Theme Toggle Button (Light by default) */}
+          {/* Theme Toggle Button (Light mode default) */}
           <button
             type="button"
             className="theme-toggle-btn"
@@ -176,7 +176,7 @@ function SuperAdmin() {
             👥 Staff Management
           </Link>
           <Link to="/admin" className="super-nav-btn admin-link-btn">
-            🛡️ Regular Admin
+            🛡️ Regular Admin Dashboard
           </Link>
           <Link to="/admin/register" className="super-nav-btn reg-btn">
             ➕ Register Admin
@@ -199,41 +199,29 @@ function SuperAdmin() {
 
       {/* Main Container */}
       <main className="super-container">
-        {/* Banner Warning if registered accounts >= 2 */}
-        {(limitReached || adminCount >= 2) && (
-          <div className="super-warning-banner">
-            <div className="warning-banner-icon">⚠️</div>
-            <div className="warning-banner-content">
-              <h4>Registered Admin Limit Alert</h4>
-              <p>
-                Maximum limit of <strong>2 Administrator accounts</strong> reached ({adminCount}/2 registered).
-                New account registrations are blocked until an account is removed.
-              </p>
-            </div>
-          </div>
-        )}
+        {/* Note: The Registered Admin Limit Alert banner is explicitly excluded from dashboard and shown only on registration pages as required */}
 
         {/* Hero Control Panel Header */}
         <div className="super-hero-panel">
           <div>
             <h1 className="super-hero-title">Executive Dashboard</h1>
             <p className="super-hero-desc">
-              Comprehensive overview of safeguarding complaints, system administration, and registered admin credentials.
+              Comprehensive overview of safeguarding complaints, staff management, and regular admin accounts.
             </p>
           </div>
 
           <div className="super-account-pill">
             <div className="account-pill-title">ADMINISTRATOR ACCOUNTS</div>
             <div className="account-pill-meta">
-              <span className="account-count">{adminCount} / 2</span>
-              <span className={`account-status-badge ${limitReached || adminCount >= 2 ? 'full' : 'available'}`}>
-                {limitReached || adminCount >= 2 ? 'FULL (2 MAX)' : `${2 - adminCount} SLOT AVAILABLE`}
+              <span className="account-count">{adminCount} / 3</span>
+              <span className={`account-status-badge ${limitReached || adminCount >= 3 ? 'full' : 'available'}`}>
+                {limitReached || adminCount >= 3 ? 'FULL (3 MAX)' : `${3 - adminCount} SLOT AVAILABLE`}
               </span>
             </div>
             <div className="account-progress-bar">
               <div
                 className="account-progress-fill"
-                style={{ width: `${Math.min((adminCount / 2) * 100, 100)}%` }}
+                style={{ width: `${Math.min((adminCount / 3) * 100, 100)}%` }}
               />
             </div>
           </div>
@@ -363,18 +351,18 @@ function SuperAdmin() {
             <div>
               <h2 className="table-title">Registered Administrator Accounts</h2>
               <p className="table-subtitle">
-                System access accounts (Maximum 2 administrator accounts allowed)
+                System access accounts (Maximum 3 administrator accounts allowed)
               </p>
             </div>
 
             <div className="table-card-actions">
               <Link
                 to="/admin/register"
-                className={`table-reg-btn ${limitReached || adminCount >= 2 ? 'disabled' : ''}`}
+                className={`table-reg-btn ${limitReached || adminCount >= 3 ? 'disabled' : ''}`}
                 onClick={(e) => {
-                  if (limitReached || adminCount >= 2) {
+                  if (limitReached || adminCount >= 3) {
                     e.preventDefault();
-                    alert('Admin registration limit reached (2/2). No more admin accounts can be registered.');
+                    alert('Admin registration limit reached (3/3). No more admin accounts can be registered.');
                   }
                 }}
               >

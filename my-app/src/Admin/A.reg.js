@@ -19,14 +19,14 @@ function AdminReg() {
     useEffect(() => {
         async function loadInitialData() {
             try {
-                // Check admin count and limit (max 2)
+                // Check regular admin count and limit (max 3)
                 const authRes = await fetch(`${API_URL}/api/auth/admins`);
                 const authData = await authRes.json();
                 if (authData.success) {
                     setAdminCount(authData.count || 0);
-                    if (authData.limitReached || authData.count >= 2) {
+                    if (authData.limitReached || authData.count >= 3) {
                         setLimitReached(true);
-                        setError('Admin registration limit reached. Maximum of 2 administrator accounts allowed.');
+                        setError('Admin registration limit reached. Maximum of 3 administrator accounts allowed.');
                     }
                 }
 
@@ -48,8 +48,8 @@ function AdminReg() {
         event.preventDefault();
         setError('');
 
-        if (limitReached || adminCount >= 2) {
-            setError('Admin registration limit reached. Maximum of 2 admin accounts allowed.');
+        if (limitReached || adminCount >= 3) {
+            setError('Admin registration limit reached. Maximum of 3 administrator accounts allowed.');
             return;
         }
 
@@ -94,9 +94,9 @@ function AdminReg() {
                 <p className="auth-copy">Create a secure administrator account to manage safeguarding operations.</p>
 
                 {limitReached && (
-                    <div className="registration-limit-warning" style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #f87171', padding: '12px 16px', borderRadius: '10px', marginBottom: '1rem', color: '#ef4444' }}>
-                        <strong>Registration Limit Reached</strong>
-                        <p style={{ margin: '4px 0 0', fontSize: '0.85rem' }}>Maximum of 2 administrator accounts can be registered ({adminCount}/2 slots filled).</p>
+                    <div className="registration-limit-warning" style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #f87171', padding: '14px 18px', borderRadius: '12px', marginBottom: '1.25rem', color: '#ef4444' }}>
+                        <strong style={{ display: 'block', fontSize: '1rem' }}>⚠️ Registered Admin Limit Alert</strong>
+                        <p style={{ margin: '4px 0 0', fontSize: '0.88rem' }}>Maximum limit of 3 administrator accounts reached ({adminCount}/3 registered). New registrations are closed.</p>
                     </div>
                 )}
 

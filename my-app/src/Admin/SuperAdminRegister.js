@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import '../form.css';
 
@@ -11,11 +11,38 @@ function SuperAdminRegister() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [superAdminCount, setSuperAdminCount] = useState(0);
+  const [limitReached, setLimitReached] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    async function checkLimit() {
+      try {
+        const res = await fetch(`${API_URL}/api/super-auth/superadmins`);
+        const data = await res.json();
+        if (data.success) {
+          setSuperAdminCount(data.count || 0);
+          if (data.limitReached || data.count >= 2) {
+            setLimitReached(true);
+            setError('Super Admin registration limit reached. Maximum of 2 Super Admin accounts allowed.');
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch Super Admin limit:', err);
+      }
+    }
+
+    checkLimit();
+  }, []);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError('');
+
+    if (limitReached || superAdminCount >= 2) {
+      setError('Super Admin registration limit reached. Maximum of 2 Super Admin accounts allowed.');
+      return;
+    }
 
     if (!username.trim() || !email.trim() || !password || !confirmPassword) {
       setError('Please fill in all fields.');
@@ -49,6 +76,9 @@ function SuperAdminRegister() {
       if (!response.ok) {
         const message = data.error || data.errors?.[0]?.msg || 'Unable to register Super Admin.';
         setError(message);
+        if (response.status === 403) {
+          setLimitReached(true);
+        }
         return;
       }
 
@@ -75,6 +105,16 @@ function SuperAdminRegister() {
           Create an elite Super Admin account with full system authority and account management privileges.
         </p>
 
+        {limitReached && (
+          <div className="registration-limit-warning" style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #f87171', padding: '14px 18px', borderRadius: '12px', marginBottom: '1.25rem', color: '#ef4444' }}>
+            <strong style={{ display: 'block', fontSize: '1rem' }}>⚠️ Registered Super Admin Limit Alert</strong>
+            <p style={{ margin: '4px 0 0', fontSize: '0.88rem' }}>
+              Maximum limit of 2 Super Administrator accounts reached ({superAdminCount}/2 registered).
+              New Super Admin registrations are currently closed.
+            </p>
+          </div>
+        )}
+
         <form className="auth-form" onSubmit={handleSubmit}>
           <label className="auth-field">
             Username
@@ -82,6 +122,7 @@ function SuperAdminRegister() {
               className="auth-input"
               type="text"
               value={username}
+              disabled={limitReached}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Username"
             />
@@ -93,6 +134,7 @@ function SuperAdminRegister() {
               className="auth-input"
               type="email"
               value={email}
+              disabled={limitReached}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Email"
             />
@@ -104,6 +146,7 @@ function SuperAdminRegister() {
               className="auth-input"
               type="password"
               value={password}
+              disabled={limitReached}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password (min 8 chars)"
             />
@@ -115,6 +158,7 @@ function SuperAdminRegister() {
               className="auth-input"
               type="password"
               value={confirmPassword}
+              disabled={limitReached}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Confirm Password"
             />
@@ -122,8 +166,8 @@ function SuperAdminRegister() {
 
           {error && <p className="form-error">{error}</p>}
 
-          <button className="auth-button" type="submit" disabled={loading}>
-            {loading ? 'Creating Account…' : 'Register Super Admin'}
+          <button className="auth-button" type="submit" disabled={loading || limitReached}>
+            {loading ? 'Creating Account…' : limitReached ? 'Registration Closed' : 'Register Super Admin'}
           </button>
 
           <div className="auth-link-row">

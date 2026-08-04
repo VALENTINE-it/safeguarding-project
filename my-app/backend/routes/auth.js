@@ -30,8 +30,8 @@ router.post(
       }
 
       const adminCount = await Admin.countDocuments();
-      if (adminCount >= 2) {
-        return res.status(403).json({ error: 'Admin registration limit reached. Maximum of 2 administrator accounts allowed.' });
+      if (adminCount >= 3) {
+        return res.status(403).json({ error: 'Admin registration limit reached. Maximum of 3 administrator accounts allowed.' });
       }
 
       let resolvedStaffId = null;
@@ -114,12 +114,12 @@ router.get('/admins', async (req, res) => {
       .populate('staffId', 'name role');
     
     const adminCount = admins.length;
-    const limitReached = adminCount >= 2;
+    const limitReached = adminCount >= 3;
 
     return res.json({
       success: true,
       count: adminCount,
-      limit: 2,
+      limit: 3,
       limitReached,
       admins: admins.map(a => a.toJSON())
     });

@@ -33,6 +33,11 @@ router.post(
         return res.status(409).json({ error: 'Super Admin username or email already exists.' });
       }
 
+      const count = await SuperAdmin.countDocuments();
+      if (count >= 2) {
+        return res.status(403).json({ error: 'Super Admin registration limit reached. Maximum of 2 Super Admin accounts allowed.' });
+      }
+
       const superAdmin = new SuperAdmin({
         username,
         email: email.toLowerCase(),
@@ -101,5 +106,28 @@ router.post(
     }
   }
 );
+
+/**
+ * GET /api/super-auth/superadmins
+ * List registered Super Admin accounts and current count (max 2)
+ */
+router.get('/superadmins', async (req, res) => {
+  try {
+    const superAdmins = await SuperAdmin.find().select('username email createdAt loginHistory');
+    const count = superAdmins.length;
+    const limitReached = count >= 2;
+
+    return res.json({
+      success: true,
+      count,
+      limit: 2,
+      limitReached,
+      superAdmins: superAdmins.map(s => s.toJSON()),
+    });
+  } catch (err) {
+    console.error('Error fetching Super Admin accounts:', err);
+    return res.status(500).json({ error: 'Failed to fetch Super Admin accounts.' });
+  }
+});
 
 module.exports = router;

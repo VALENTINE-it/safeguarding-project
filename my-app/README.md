@@ -1,94 +1,66 @@
 # Safeguarding App
 
-This React app provides a secure-style landing page that guides users to a secure message form after selecting a message path.
+This React app provides the front end for a secure safeguarding experience, backed by a Go-based API service.
 
-## About this page
+## Overview
 
-This page is the main landing interface for the Safeguarding application.
-It includes:
-- a branded header with the app title
-- an introduction to the secure messaging experience
-- a choice between starting a new message or following up
-- a `Continue` button that opens the secure message form
+The application includes:
+- a branded landing experience
+- a secure message form for submitting safeguarding reports
+- follow-up support through thread-based messaging
+- admin and super-admin authentication flows
 
-The purpose of this page is to welcome users and guide them into the next step of the application.
+The backend now runs as a single Go service rather than a Node.js service.
 
-## Available Scripts
+## Frontend scripts
 
 In the project directory, you can run:
 
 ### `npm start`
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
-
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+Runs the React app in development mode.
+Open http://localhost:3000 to view it in the browser.
 
 ### `npm test`
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Runs the frontend test suite.
 
 ### `npm run build`
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Builds the app for production.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Backend
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+The API is served by the Go backend in [backend-go](backend-go).
 
-### `npm run eject`
+### Run the backend
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+```bash
+cd backend-go
+go mod tidy
+go run ./cmd/server
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+The API will be available at http://localhost:5000.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### Health check
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+```bash
+curl http://localhost:5000/api/health
+```
 
-## Learn More
+## Docker
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+Build the frontend image:
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+```bash
+docker build -t safeguarding-frontend .
+```
 
-### Code Splitting
+Run the frontend container:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+```bash
+docker run -p 3000:3000 safeguarding-frontend
+```
 
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
-
-## DOCKER
-## Building Docker Image
-
-Run `sudo docker build -t <name-of-image>`
-
-## How to run a docker Image
-
-Run `sudo docker images`
-
-## Running The APP using Docker
-
-Run `sudo docker run -p 3000:3000 <name-of-image>`
+If you also want to run the Go backend in Docker, use the backend service configuration from the Go project directory.

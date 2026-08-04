@@ -50,10 +50,10 @@ function FollowUpForm({ onBack }) {
     return (
       <div className="form-container">
         <div className="security-banner">
-          🔒 END-TO-END ENCRYPTION ACTIVE • ZERO-KNOWLEDGE PROTOCOL
+          END-TO-END ENCRYPTION ACTIVE • ZERO-KNOWLEDGE PROTOCOL
         </div>
         <div className="form-card">
-          <h2>✅ Follow-Up Sent</h2>
+          <h2>Follow-Up Sent</h2>
           <p className="subtitle">
             Your follow-up message has been securely added to the thread.
           </p>
@@ -68,7 +68,7 @@ function FollowUpForm({ onBack }) {
   return (
     <div className="form-container">
       <div className="security-banner">
-        🔒 END-TO-END ENCRYPTION ACTIVE • ZERO-KNOWLEDGE PROTOCOL
+        END-TO-END ENCRYPTION ACTIVE • ZERO-KNOWLEDGE PROTOCOL
       </div>
 
       <div className="form-card">
@@ -115,7 +115,7 @@ function FollowUpForm({ onBack }) {
           </label>
 
           {status === 'error' && (
-            <div className="error-banner">⚠️ {errorMsg}</div>
+            <div className="error-banner">{errorMsg}</div>
           )}
 
           <div className="form-actions">
@@ -135,7 +135,7 @@ function FollowUpForm({ onBack }) {
 
       <div className="info-section">
         <div className="info-card">
-          <h4>🛡️ Identity Masking</h4>
+          <h4>Identity Masking</h4>
           <p>Your IP address and device info are hidden.</p>
         </div>
         <div className="info-card">

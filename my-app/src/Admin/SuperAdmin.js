@@ -142,9 +142,9 @@ function SuperAdmin() {
       {/* Super Admin Top Header */}
       <header className="super-header">
         <div className="super-header-left">
-          <span className="super-badge">👑 SUPER ADMIN PORTAL</span>
+          <span className="super-badge">SUPER ADMIN PORTAL</span>
           <div className="super-user-info">
-            <span className="super-avatar">⚡</span>
+            <span className="super-avatar">S</span>
             <span className="super-name">{superAdminName}</span>
           </div>
         </div>
@@ -169,17 +169,17 @@ function SuperAdmin() {
               fontSize: '0.85rem',
             }}
           >
-            {theme === 'light' ? '🌙 Dark Mode' : '☀️ Light Mode (Default)'}
+            {theme === 'light' ? 'Dark Mode' : 'Light Mode (Default)'}
           </button>
 
           <Link to="/admin/staff" className="super-nav-btn staff-btn">
-            👥 Staff Management
+            Staff Management
           </Link>
           <Link to="/admin" className="super-nav-btn admin-link-btn">
-            🛡️ Regular Admin Dashboard
+            Regular Admin Dashboard
           </Link>
           <Link to="/admin/register" className="super-nav-btn reg-btn">
-            ➕ Register Admin
+            Register Admin
           </Link>
           <button
             type="button"
@@ -366,7 +366,7 @@ function SuperAdmin() {
                   }
                 }}
               >
-                ➕ Register New Admin
+                Register New Admin
               </Link>
             </div>
           </div>
@@ -410,7 +410,7 @@ function SuperAdmin() {
                       <td>
                         {adm.staffId ? (
                           <span className="staff-linked-tag">
-                            👤 {adm.staffId.name} {adm.staffId.role ? `(${adm.staffId.role})` : ''}
+                            {adm.staffId.name} {adm.staffId.role ? `(${adm.staffId.role})` : ''}
                           </span>
                         ) : (
                           <span className="unlinked-tag">Not linked</span>

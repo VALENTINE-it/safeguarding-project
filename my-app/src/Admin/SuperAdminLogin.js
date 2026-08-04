@@ -52,7 +52,6 @@ function SuperAdminLogin() {
     <div className="auth-shell">
       <div className="auth-card">
         <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-          <span style={{ fontSize: '2.5rem' }}>👑</span>
         </div>
         <h1 className="auth-title">Super Admin Portal</h1>
         <p className="auth-copy">

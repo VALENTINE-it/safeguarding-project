@@ -145,7 +145,7 @@ function Admin() {
       {/* Header Bar */}
       <header className="admin-header-nav">
         <div className="admin-header-left">
-          <span className="admin-brand-badge">🛡️ SAFEGUARDING ADMIN</span>
+          <span className="admin-brand-badge">SAFEGUARDING ADMIN</span>
           <span className="admin-user-pill">
             <span className="admin-avatar">{adminName.charAt(0).toUpperCase()}</span>
             <span>{adminName}</span>
@@ -161,11 +161,11 @@ function Admin() {
           >
             {theme === 'light' ? (
               <>
-                <span className="toggle-icon">🌙</span> Dark Mode
+                <span className="toggle-icon"></span> Dark Mode
               </>
             ) : (
               <>
-                <span className="toggle-icon">☀️</span> Light Mode
+                <span className="toggle-icon"></span> Light Mode
               </>
             )}
           </button>
@@ -309,7 +309,7 @@ function Admin() {
                           </div>
                           {message.reportedStaff && (
                             <span className="staff-pill">
-                              👤 Re: {message.reportedStaff.name} ({message.reportedStaff.role})
+                              Re: {message.reportedStaff.name} ({message.reportedStaff.role})
                             </span>
                           )}
                         </div>
@@ -323,11 +323,11 @@ function Admin() {
                               onClick={(e) => handleCopyToken(message.threadToken, e)}
                               title="Click to copy thread token"
                             >
-                              🔑 {message.threadToken}
+                              {message.threadToken}
                               {copiedToken === message.threadToken && <span className="copy-pop">Copied!</span>}
                             </span>
                             <span className="date-tag">
-                              🕒 {new Date(message.createdAt || Date.now()).toLocaleString()}
+                              {new Date(message.createdAt || Date.now()).toLocaleString()}
                             </span>
                           </div>
 
@@ -357,13 +357,13 @@ function Admin() {
                 <div className="section-header">
                   <div className="section-title-wrap">
                     <span className="section-badge read-badge-count">{readMessages.length}</span>
-                    <h2>✅ Read Messages</h2>
+                    <h2>Read Messages</h2>
                   </div>
                 </div>
 
                 {readMessages.length === 0 ? (
                   <div className="empty-state">
-                    <div className="empty-icon">📂</div>
+                    <div className="empty-icon"></div>
                     <h3>No Reviewed Messages</h3>
                     <p>Messages will move here after you review and mark them as read.</p>
                   </div>
@@ -380,7 +380,7 @@ function Admin() {
                           </div>
                           {message.reportedStaff && (
                             <span className="staff-pill">
-                              👤 Re: {message.reportedStaff.name} ({message.reportedStaff.role})
+                              Re: {message.reportedStaff.name} ({message.reportedStaff.role})
                             </span>
                           )}
                         </div>
@@ -394,11 +394,11 @@ function Admin() {
                               onClick={(e) => handleCopyToken(message.threadToken, e)}
                               title="Click to copy thread token"
                             >
-                              🔑 {message.threadToken}
+                              {message.threadToken}
                               {copiedToken === message.threadToken && <span className="copy-pop">Copied!</span>}
                             </span>
                             <span className="date-tag">
-                              🕒 {new Date(message.createdAt || Date.now()).toLocaleString()}
+                              {new Date(message.createdAt || Date.now()).toLocaleString()}
                             </span>
                           </div>
 

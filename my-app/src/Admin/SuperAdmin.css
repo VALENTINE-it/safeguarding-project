@@ -9,6 +9,18 @@
   transition: background 0.3s ease, color 0.3s ease;
 }
 
+.super-admin-root.theme-light {
+  background:
+    radial-gradient(circle at top left, rgba(15, 118, 110, 0.08), transparent 28%),
+    linear-gradient(135deg, #f8fbff 0%, #f6f8fc 45%, #eef9f7 100%);
+}
+
+.super-admin-root.theme-dark {
+  background:
+    radial-gradient(circle at top left, rgba(99, 102, 241, 0.17), transparent 28%),
+    linear-gradient(135deg, #050816 0%, #0b1222 100%);
+}
+
 /* Light Theme (Default) - Complete High-Contrast Visibility */
 .super-admin-root.theme-light {
   background: #f4f6fb;
@@ -227,6 +239,7 @@
   top: 0;
   z-index: 100;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  border-radius: 0 0 20px 20px;
 }
 
 .super-header-left {
@@ -360,12 +373,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #0f172a;
+  background: linear-gradient(135deg, #0f172a 0%, #111827 100%);
   border: 1px solid #1e293b;
   padding: 28px 36px;
-  border-radius: 20px;
+  border-radius: 24px;
   margin-bottom: 32px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.28);
 }
 
 .super-hero-title {
@@ -451,12 +464,12 @@
 
 /* Graph Card Section */
 .graph-card {
-  background: #0f172a;
+  background: linear-gradient(135deg, #0f172a 0%, #111827 100%);
   border: 1px solid #1e293b;
-  border-radius: 20px;
+  border-radius: 22px;
   padding: 32px;
   margin-bottom: 32px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.24);
 }
 
 .graph-header {

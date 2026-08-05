@@ -18,7 +18,7 @@ func messagesRoutes(db *mongo.Database) http.Handler {
 		filter := r.URL.Query().Get("filter")
 		date := r.URL.Query().Get("date")
 		threadToken := r.URL.Query().Get("threadToken")
-		excludedStaffID := r.URL.Query().Get("adminId")
+		excludedStaffID := r.URL.Query().Get("staffId")
 
 		query := bson.M{"isDeleted": false}
 		if threadToken != "" {
@@ -70,7 +70,7 @@ func messagesRoutes(db *mongo.Database) http.Handler {
 
 	r.Get("/unread", func(w http.ResponseWriter, r *http.Request) {
 		query := bson.M{"isRead": false, "isDeleted": false}
-		if excludedStaffID := r.URL.Query().Get("adminId"); excludedStaffID != "" {
+		if excludedStaffID := r.URL.Query().Get("staffId"); excludedStaffID != "" {
 			query["$or"] = []bson.M{{"reportedStaff": nil}, {"reportedStaff": bson.M{"$ne": excludedStaffID}}}
 		}
 		cursor, err := db.Collection("messages").Find(r.Context(), query)
@@ -103,20 +103,11 @@ func messagesRoutes(db *mongo.Database) http.Handler {
 			writeJSON(w, http.StatusNotFound, map[string]any{"error": "Message not found."})
 			return
 		}
-		writeJSON(w, http.StatusOK, map[string]any{"success": true, "message": msg.public()})
-	})
-
-	r.Patch("/mark-all-read", func(w http.ResponseWriter, r *http.Request) {
-		query := bson.M{"isRead": false, "isDeleted": false}
-		if excludedStaffID := r.URL.Query().Get("adminId"); excludedStaffID != "" {
-			query["$or"] = []bson.M{{"reportedStaff": nil}, {"reportedStaff": bson.M{"$ne": excludedStaffID}}}
-		}
-		result, err := db.Collection("messages").UpdateMany(r.Context(), query, bson.M{"$set": bson.M{"isRead": true, "readAt": time.Now().UTC()}})
-		if err != nil {
-			writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to mark messages as read."})
+		if excludedStaffID := r.URL.Query().Get("staffId"); excludedStaffID != "" && msg.ReportedStaff != nil && *msg.ReportedStaff == excludedStaffID {
+			writeJSON(w, http.StatusNotFound, map[string]any{"error": "Message not found."})
 			return
 		}
-		writeJSON(w, http.StatusOK, map[string]any{"success": true, "modifiedCount": result.ModifiedCount})
+		writeJSON(w, http.StatusOK, map[string]any{"success": true, "message": msg.public()})
 	})
 
 	r.Patch("/{id}/read", func(w http.ResponseWriter, r *http.Request) {
@@ -131,6 +122,10 @@ func messagesRoutes(db *mongo.Database) http.Handler {
 			writeJSON(w, http.StatusNotFound, map[string]any{"error": "Message not found."})
 			return
 		}
+		if excludedStaffID := r.URL.Query().Get("staffId"); excludedStaffID != "" && current.ReportedStaff != nil && *current.ReportedStaff == excludedStaffID {
+			writeJSON(w, http.StatusNotFound, map[string]any{"error": "Message not found."})
+			return
+		}
 		if current.IsDeleted {
 			writeJSON(w, http.StatusNotFound, map[string]any{"error": "Message not found."})
 			return
@@ -142,6 +137,19 @@ func messagesRoutes(db *mongo.Database) http.Handler {
 			return
 		}
 		writeJSON(w, http.StatusOK, map[string]any{"success": true, "message": updated.public()})
+	})
+
+	r.Patch("/mark-all-read", func(w http.ResponseWriter, r *http.Request) {
+		query := bson.M{"isRead": false, "isDeleted": false}
+		if excludedStaffID := r.URL.Query().Get("staffId"); excludedStaffID != "" {
+			query["$or"] = []bson.M{{"reportedStaff": nil}, {"reportedStaff": bson.M{"$ne": excludedStaffID}}}
+		}
+		result, err := db.Collection("messages").UpdateMany(r.Context(), query, bson.M{"$set": bson.M{"isRead": true, "readAt": time.Now().UTC()}})
+		if err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to mark messages as read."})
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"success": true, "modifiedCount": result.ModifiedCount})
 	})
 
 	r.Post("/", func(w http.ResponseWriter, r *http.Request) {

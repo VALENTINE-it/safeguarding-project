@@ -8,7 +8,7 @@ const [loading, setLoading] = useState(true);
 const [searchToken, setSearchToken] = useState('');
 const [selectedDate, setSelectedDate] = useState('');
 const [adminName, setAdminName] = useState('Admin');
-const [adminId, setAdminId] = useState('');
+const [staffId, setStaffId] = useState('');
 const [activeTab, setActiveTab] = useState('all'); // 'all' | 'unread' | 'read'
 const [theme, setTheme] = useState(() => {
 return localStorage.getItem('adminTheme') || 'light';
@@ -23,16 +23,16 @@ setTheme(nextTheme);
 localStorage.setItem('adminTheme', nextTheme);
 };
 
-const fetchMessages = useCallback(async (token = searchToken, date = selectedDate, currentAdminId = adminId) => {
-setLoading(true);
-try {
-const params = new URLSearchParams();
-if (token.trim()) params.append('threadToken', token.trim());
-if (date) params.append('date', date);
-if (currentAdminId) params.append('adminId', currentAdminId);
+const fetchMessages = useCallback(async (token = searchToken, date = selectedDate, currentStaffId = staffId) => {
+  setLoading(true);
+  try {
+    const params = new URLSearchParams();
+    if (token.trim()) params.append('threadToken', token.trim());
+    if (date) params.append('date', date);
+    if (currentStaffId) params.append('staffId', currentStaffId);
 
-const response = await fetch(`http://localhost:5000/api/messages?${params.toString()}`);
-const data = await response.json();
+    const response = await fetch(`http://localhost:5000/api/messages?${params.toString()}`);
+    const data = await response.json();
 
 if (data.success) {
 setMessages(data.messages || []);
@@ -42,12 +42,12 @@ console.error('Failed to fetch messages:', error);
 } finally {
 setLoading(false);
 }
-}, [searchToken, selectedDate, adminId]);
+}, [searchToken, selectedDate, staffId]);
 
 const markAsRead = async (messageId) => {
 try {
 const params = new URLSearchParams();
-if (adminId) params.append('adminId', adminId);
+if (staffId) params.append('staffId', staffId);
 
 const response = await fetch(
 `http://localhost:5000/api/messages/${messageId}/read?${params.toString()}`,
@@ -77,7 +77,7 @@ current.map((message) => ({ ...message, isRead: true, readAt: new Date().toISOSt
 
 try {
 const params = new URLSearchParams();
-if (adminId) params.append('adminId', adminId);
+if (staffId) params.append('staffId', staffId);
 const response = await fetch(`http://localhost:5000/api/messages/mark-all-read?${params.toString()}`, { method: 'PATCH' });
 const data = await response.json();
 if (!data.success) {
@@ -120,20 +120,20 @@ navigate('/admin/login');
 return;
 }
 
-let currentAdminId = '';
+let currentStaffId = '';
 const storedAdmin = localStorage.getItem('adminUser');
 if (storedAdmin) {
 try {
 const parsedAdmin = JSON.parse(storedAdmin);
 setAdminName(parsedAdmin.username || parsedAdmin.email || 'Admin');
-currentAdminId = parsedAdmin.id || parsedAdmin._id || '';
-setAdminId(currentAdminId);
+currentStaffId = parsedAdmin.staffId || '';
+setStaffId(currentStaffId);
 } catch (error) {
 console.error('Failed to parse admin user:', error);
 }
 }
 
-fetchMessages(searchToken, selectedDate, currentAdminId);
+fetchMessages(searchToken, selectedDate, currentStaffId);
 // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [navigate]);
 

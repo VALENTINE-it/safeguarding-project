@@ -152,9 +152,45 @@ func authRoutes(db *mongo.Database) http.Handler {
 			writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to fetch admin accounts."})
 			return
 		}
+
+		staffIds := make([]string, 0, len(admins))
+		for _, admin := range admins {
+			if admin.StaffID != nil {
+				staffIds = append(staffIds, *admin.StaffID)
+			}
+		}
+
+		staffByID := map[string]Staff{}
+		if len(staffIds) > 0 {
+			objectIDs := make([]primitive.ObjectID, 0, len(staffIds))
+			for _, id := range staffIds {
+				if objID, err := primitive.ObjectIDFromHex(id); err == nil {
+					objectIDs = append(objectIDs, objID)
+				}
+			}
+			if len(objectIDs) > 0 {
+				staffCursor, err := db.Collection("staff").Find(r.Context(), bson.M{"_id": bson.M{"$in": objectIDs}})
+				if err == nil {
+					var staffRecords []Staff
+					if err := staffCursor.All(r.Context(), &staffRecords); err == nil {
+						for _, s := range staffRecords {
+							staffByID[s.ID.Hex()] = s
+						}
+					}
+					staffCursor.Close(r.Context())
+				}
+			}
+		}
+
 		public := make([]map[string]any, 0, len(admins))
 		for _, admin := range admins {
-			public = append(public, admin.public())
+			payload := admin.public()
+			if admin.StaffID != nil {
+				if staffRec, ok := staffByID[*admin.StaffID]; ok {
+					payload["staffId"] = staffRec.public()
+				}
+			}
+			public = append(public, payload)
 		}
 		writeJSON(w, http.StatusOK, map[string]any{"success": true, "count": len(public), "limit": 3, "limitReached": len(public) >= 3, "admins": public})
 	})

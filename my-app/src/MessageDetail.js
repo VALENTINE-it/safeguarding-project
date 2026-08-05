@@ -10,6 +10,7 @@ function MessageDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [staffId, setStaffId] = useState('');
 
   useEffect(() => {
     async function fetchMessage() {
@@ -19,8 +20,9 @@ function MessageDetail() {
         if (storedAdmin) {
           try {
             const parsedAdmin = JSON.parse(storedAdmin);
-            const adminId = parsedAdmin.id || parsedAdmin._id;
-            if (adminId) params.append('adminId', adminId);
+            const currentStaffId = parsedAdmin.staffId || '';
+            setStaffId(currentStaffId);
+            if (currentStaffId) params.append('staffId', currentStaffId);
           } catch (parseErr) {
             console.error('Failed to parse admin user:', parseErr);
           }
@@ -49,7 +51,9 @@ function MessageDetail() {
     setSaving(true);
 
     try {
-      const response = await fetch(`${API_BASE}/api/messages/${messageId}/read`, {
+      const params = new URLSearchParams();
+      if (staffId) params.append('staffId', staffId);
+      const response = await fetch(`${API_BASE}/api/messages/${messageId}/read?${params.toString()}`, {
         method: 'PATCH',
       });
       const data = await response.json();

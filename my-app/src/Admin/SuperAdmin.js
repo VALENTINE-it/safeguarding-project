@@ -54,6 +54,35 @@ function SuperAdmin() {
     }
   }, []);
 
+  const deleteAdmin = async (adminId) => {
+    if (!adminId) {
+      alert('Unable to delete admin account: missing admin ID.');
+      return;
+    }
+    if (!window.confirm('Delete this administrator account?')) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/api/auth/admins/${encodeURIComponent(adminId)}`, {
+        method: 'DELETE',
+      });
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        await fetchData();
+      } else {
+        alert(data.error || 'Unable to delete admin account.');
+      }
+    } catch (err) {
+      console.error('Failed to delete admin account:', err);
+      alert('Unable to delete admin account. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     const isSuperAuth = localStorage.getItem('superAdminAuth');
     const isAdminAuth = localStorage.getItem('adminAuth');
@@ -382,53 +411,67 @@ function SuperAdmin() {
                   <th>Account Created</th>
                   <th>Logins</th>
                   <th>Status</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="7" className="empty-table-cell">
+                    <td colSpan="8" className="empty-table-cell">
                       Loading administrator accounts…
                     </td>
                   </tr>
                 ) : admins.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="empty-table-cell">
+                    <td colSpan="8" className="empty-table-cell">
                       No admin accounts registered yet. Click "Register New Admin" to create one.
                     </td>
                   </tr>
                 ) : (
-                  admins.map((adm, index) => (
-                    <tr key={adm._id || index}>
-                      <td>
-                        <span className="row-index">{index + 1}</span>
-                      </td>
-                      <td>
-                        <strong className="admin-username-cell">{adm.username}</strong>
-                      </td>
-                      <td className="admin-email-cell">{adm.email}</td>
-                      <td>
-                        {adm.staffId ? (
-                          <span className="staff-linked-tag">
-                            {adm.staffId.name} {adm.staffId.role ? `(${adm.staffId.role})` : ''}
+                  admins.map((adm, index) => {
+                    const adminId = adm.id || adm._id || '';
+                    return (
+                      <tr key={adminId || index}>
+                        <td>
+                          <span className="row-index">{index + 1}</span>
+                        </td>
+                        <td>
+                          <strong className="admin-username-cell">{adm.username}</strong>
+                        </td>
+                        <td className="admin-email-cell">{adm.email}</td>
+                        <td>
+                          {adm.staffId ? (
+                            <span className="staff-linked-tag">
+                              {adm.staffId.name} {adm.staffId.role ? `(${adm.staffId.role})` : ''}
+                            </span>
+                          ) : (
+                            <span className="unlinked-tag">Not linked</span>
+                          )}
+                        </td>
+                        <td>
+                          {adm.createdAt ? new Date(adm.createdAt).toLocaleDateString() : 'N/A'}
+                        </td>
+                        <td>
+                          <span className="login-count-pill">
+                            {(adm.loginHistory && adm.loginHistory.length) || 0} logins
                           </span>
-                        ) : (
-                          <span className="unlinked-tag">Not linked</span>
-                        )}
-                      </td>
-                      <td>
-                        {adm.createdAt ? new Date(adm.createdAt).toLocaleDateString() : 'N/A'}
-                      </td>
-                      <td>
-                        <span className="login-count-pill">
-                          {(adm.loginHistory && adm.loginHistory.length) || 0} logins
-                        </span>
-                      </td>
-                      <td>
-                        <span className="status-active-pill">Active</span>
-                      </td>
-                    </tr>
-                  ))
+                        </td>
+                        <td>
+                          <span className="status-active-pill">Active</span>
+                        </td>
+                        <td>
+                          <button
+                            type="button"
+                            className="table-action-btn delete-admin-btn"
+                            onClick={() => deleteAdmin(adminId)}
+                            disabled={loading || !adminId}
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>

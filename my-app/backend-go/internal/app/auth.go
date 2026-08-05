@@ -195,6 +195,48 @@ func authRoutes(db *mongo.Database) http.Handler {
 		writeJSON(w, http.StatusOK, map[string]any{"success": true, "count": len(public), "limit": 3, "limitReached": len(public) >= 3, "admins": public})
 	})
 
+	r.Delete("/admins/{id}", func(w http.ResponseWriter, r *http.Request) {
+		id := chi.URLParam(r, "id")
+		objID, err := primitive.ObjectIDFromHex(id)
+		if err != nil {
+			writeJSON(w, http.StatusNotFound, map[string]any{"error": "Admin account not found."})
+			return
+		}
+
+		result, err := db.Collection("admins").DeleteOne(r.Context(), bson.M{"_id": objID})
+		if err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to delete admin account."})
+			return
+		}
+		if result.DeletedCount == 0 {
+			writeJSON(w, http.StatusNotFound, map[string]any{"error": "Admin account not found."})
+			return
+		}
+
+		writeJSON(w, http.StatusOK, map[string]any{"success": true, "deletedCount": result.DeletedCount})
+	})
+
+	r.Delete("/admins/{id}/", func(w http.ResponseWriter, r *http.Request) {
+		id := chi.URLParam(r, "id")
+		objID, err := primitive.ObjectIDFromHex(id)
+		if err != nil {
+			writeJSON(w, http.StatusNotFound, map[string]any{"error": "Admin account not found."})
+			return
+		}
+
+		result, err := db.Collection("admins").DeleteOne(r.Context(), bson.M{"_id": objID})
+		if err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to delete admin account."})
+			return
+		}
+		if result.DeletedCount == 0 {
+			writeJSON(w, http.StatusNotFound, map[string]any{"error": "Admin account not found."})
+			return
+		}
+
+		writeJSON(w, http.StatusOK, map[string]any{"success": true, "deletedCount": result.DeletedCount})
+	})
+
 	return r
 }
 

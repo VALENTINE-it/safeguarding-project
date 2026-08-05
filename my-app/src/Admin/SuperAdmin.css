@@ -741,6 +741,33 @@
   box-shadow: 0 6px 20px rgba(139, 92, 246, 0.5);
 }
 
+.table-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.delete-admin-btn {
+  background: rgba(239, 68, 68, 0.15);
+  color: #b91c1e;
+}
+
+.delete-admin-btn:hover {
+  background: rgba(248, 113, 113, 0.2);
+}
+
+.delete-admin-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .table-reg-btn.disabled {
   opacity: 0.5;
   cursor: not-allowed;

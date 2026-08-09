@@ -1,6 +1,6 @@
 # Safeguarding — Go Backend
 
-A secure, anonymous messaging API for the Safeguarding React app, implemented in Go and backed by MongoDB.
+A secure, anonymous messaging API for the Safeguarding React app, implemented in Go and backed by SQLite.
 
 ---
 
@@ -41,7 +41,7 @@ backend-go/
 ## Prerequisites
 
 - Go 1.22+
-- MongoDB running locally or reachable via a connection string
+- SQLite (no external service required; the database is a local file)
 
 ---
 
@@ -51,11 +51,11 @@ Set the following environment variables before starting the server:
 
 ```bash
 export PORT=5000
-export MONGO_URI=mongodb://localhost:27017/safeguarding
+export DB_PATH=./safeguarding.db
 export JWT_SECRET=safeguarding_secret_key_2026
 ```
 
-If you are using a different MongoDB instance, replace the URI accordingly.
+`DB_PATH` is optional. If it is not set, the database defaults to `./safeguarding.db` in the current working directory. The schema is created automatically on first start.
 
 ---
 
@@ -132,4 +132,4 @@ go test ./...
 ## Notes
 
 - The Go service keeps the same JSON responses and endpoint paths as the original backend where possible so the React frontend can continue using the same API contract.
-- If the MongoDB service is unavailable, the server will still start but database-backed requests will fail until the database is reachable.
+- The database is a local SQLite file. If the file is not writable, the server will still start but database-backed requests will fail until the database is accessible.

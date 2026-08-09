@@ -279,3 +279,27 @@ func TestAuthFailures(t *testing.T) {
 		t.Errorf("duplicate registration expected status 409 or 400, got %d", rr.Code)
 	}
 }
+
+func TestThreadTokenErrors(t *testing.T) {
+	srv := setupTestServer(t)
+
+	// Fetch non-existent thread
+	req := httptest.NewRequest(http.MethodGet, "/api/threads/nonexistenttoken1234567890", nil)
+	rr := httptest.NewRecorder()
+	srv.Router.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusNotFound {
+		t.Errorf("expected 404 Not Found for missing thread, got %d", rr.Code)
+	}
+
+	// Empty reply payload
+	replyPayload, _ := json.Marshal(map[string]string{"message": ""})
+	req = httptest.NewRequest(http.MethodPost, "/api/threads/nonexistenttoken1234567890/reply", bytes.NewReader(replyPayload))
+	req.Header.Set("Content-Type", "application/json")
+	rr = httptest.NewRecorder()
+	srv.Router.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusBadRequest && rr.Code != http.StatusNotFound {
+		t.Errorf("expected 400 Bad Request or 404 for invalid thread reply, got %d", rr.Code)
+	}
+}

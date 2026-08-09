@@ -365,3 +365,36 @@ func BenchmarkStoreCreateMessage(b *testing.B) {
 		}
 	}
 }
+
+func TestSuperAuthRoutes(t *testing.T) {
+	srv := setupTestServer(t)
+
+	// Register SuperAdmin
+	regPayload, _ := json.Marshal(map[string]string{
+		"username": "super1",
+		"email":    "super1@example.com",
+		"password": "superpassword123",
+	})
+	req := httptest.NewRequest(http.MethodPost, "/api/super-auth/register", bytes.NewReader(regPayload))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	srv.Router.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("POST /api/super-auth/register expected status 201, got %d (%s)", rr.Code, rr.Body.String())
+	}
+
+	// Login SuperAdmin
+	loginPayload, _ := json.Marshal(map[string]string{
+		"username": "super1",
+		"password": "superpassword123",
+	})
+	req = httptest.NewRequest(http.MethodPost, "/api/super-auth/login", bytes.NewReader(loginPayload))
+	req.Header.Set("Content-Type", "application/json")
+	rr = httptest.NewRecorder()
+	srv.Router.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("POST /api/super-auth/login expected status 200, got %d (%s)", rr.Code, rr.Body.String())
+	}
+}

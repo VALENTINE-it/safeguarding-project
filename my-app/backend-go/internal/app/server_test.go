@@ -101,6 +101,41 @@ func TestStaffRoutes(t *testing.T) {
 	}
 }
 
+func TestStaffValidation(t *testing.T) {
+	srv := setupTestServer(t)
+
+	tests := []struct {
+		name       string
+		payload    map[string]string
+		expectCode int
+	}{
+		{
+			name:       "Empty Name",
+			payload:    map[string]string{"name": "", "role": "Teacher"},
+			expectCode: http.StatusBadRequest,
+		},
+		{
+			name:       "Valid Staff Without Role",
+			payload:    map[string]string{"name": "John Smith"},
+			expectCode: http.StatusCreated,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			body, _ := json.Marshal(tc.payload)
+			req := httptest.NewRequest(http.MethodPost, "/api/staff", bytes.NewReader(body))
+			req.Header.Set("Content-Type", "application/json")
+			rr := httptest.NewRecorder()
+			srv.Router.ServeHTTP(rr, req)
+
+			if rr.Code != tc.expectCode {
+				t.Errorf("%s: expected status %d, got %d (%s)", tc.name, tc.expectCode, rr.Code, rr.Body.String())
+			}
+		})
+	}
+}
+
 func TestMessagesAndThreads(t *testing.T) {
 	srv := setupTestServer(t)
 

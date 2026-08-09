@@ -339,3 +339,29 @@ func TestMessageStatusUpdates(t *testing.T) {
 		}
 	}
 }
+
+func BenchmarkStoreCreateMessage(b *testing.B) {
+	dir, err := os.MkdirTemp("", "safeguarding-bench-*")
+	if err != nil {
+		b.Fatalf("MkdirTemp() error = %v", err)
+	}
+	defer os.RemoveAll(dir)
+
+	dbPath := filepath.Join(dir, "bench.db")
+	store, err := OpenStore(dbPath)
+	if err != nil {
+		b.Fatalf("OpenStore() error = %v", err)
+	}
+	defer store.Close()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := store.DB().Exec(
+			`INSERT INTO messages (topic, message, threadToken, isRead, isDeleted, createdAt) VALUES (?, ?, ?, 0, 0, ?)`,
+			"Benchmark Topic", "Benchmark message content.", "token1234567890", "2026-08-09 20:00:00",
+		)
+		if err != nil {
+			b.Fatalf("Exec insert error = %v", err)
+		}
+	}
+}

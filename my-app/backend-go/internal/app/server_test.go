@@ -236,3 +236,46 @@ func TestAuthRoutes(t *testing.T) {
 		t.Fatalf("GET /api/auth/admins expected status 200, got %d (%s)", rr.Code, rr.Body.String())
 	}
 }
+
+func TestAuthFailures(t *testing.T) {
+	srv := setupTestServer(t)
+
+	// 1. Invalid login on empty database
+	loginPayload, _ := json.Marshal(map[string]string{
+		"username": "nonexistent",
+		"password": "wrongpassword",
+	})
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/login", bytes.NewReader(loginPayload))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	srv.Router.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusUnauthorized {
+		t.Errorf("expected 401 Unauthorized for invalid login, got %d", rr.Code)
+	}
+
+	// 2. Duplicate registration
+	regPayload, _ := json.Marshal(map[string]string{
+		"username": "uniqueadmin",
+		"email":    "unique@example.com",
+		"password": "password123",
+	})
+	req = httptest.NewRequest(http.MethodPost, "/api/auth/register", bytes.NewReader(regPayload))
+	req.Header.Set("Content-Type", "application/json")
+	rr = httptest.NewRecorder()
+	srv.Router.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("first registration expected 201 Created, got %d", rr.Code)
+	}
+
+	// Duplicate request
+	req = httptest.NewRequest(http.MethodPost, "/api/auth/register", bytes.NewReader(regPayload))
+	req.Header.Set("Content-Type", "application/json")
+	rr = httptest.NewRecorder()
+	srv.Router.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusConflict && rr.Code != http.StatusBadRequest {
+		t.Errorf("duplicate registration expected status 409 or 400, got %d", rr.Code)
+	}
+}

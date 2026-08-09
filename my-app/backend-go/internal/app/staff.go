@@ -2,26 +2,38 @@ package app
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func staffRoutes(db *mongo.Database) http.Handler {
+func staffRoutes(store *Store) http.Handler {
+	db := store.DB()
 	r := chi.NewRouter()
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		var staff []Staff
-		cursor, err := db.Collection("staff").Find(r.Context(), bson.M{})
+		rows, err := db.QueryContext(r.Context(), "SELECT id, name, role, createdAt, updatedAt FROM staff")
 		if err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to load staff list."})
 			return
 		}
-		defer cursor.Close(r.Context())
-		if err := cursor.All(r.Context(), &staff); err != nil {
+		defer rows.Close()
+		var staff []Staff
+		for rows.Next() {
+			var s Staff
+			var createdAt, updatedAt time.Time
+			if err := rows.Scan(&s.ID, &s.Name, &s.Role, &createdAt, &updatedAt); err != nil {
+				continue
+			}
+			s.CreatedAt = createdAt.UTC()
+			if !updatedAt.IsZero() {
+				s.UpdatedAt = updatedAt.UTC()
+			}
+			staff = append(staff, s)
+		}
+		if err := rows.Err(); err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to load staff list."})
 			return
 		}
@@ -46,29 +58,38 @@ func staffRoutes(db *mongo.Database) http.Handler {
 			writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Staff name is required"})
 			return
 		}
-		member := Staff{Name: name, Role: strings.TrimSpace(payload.Role)}
-		result, err := db.Collection("staff").InsertOne(r.Context(), member)
+		role := strings.TrimSpace(payload.Role)
+		now := time.Now().UTC()
+		result, err := db.ExecContext(r.Context(),
+			"INSERT INTO staff (name, role, createdAt, updatedAt) VALUES (?, ?, ?, ?)",
+			name, role, now, now)
 		if err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to add staff member."})
 			return
 		}
-		member.ID = result.InsertedID.(primitive.ObjectID)
+		id, _ := result.LastInsertId()
+		member := Staff{ID: id, Name: name, Role: role, CreatedAt: now, UpdatedAt: now}
 		writeJSON(w, http.StatusCreated, map[string]any{"success": true, "staff": member.public()})
 	})
 
 	r.Delete("/{id}", func(w http.ResponseWriter, r *http.Request) {
 		id := chi.URLParam(r, "id")
-		objID, err := primitive.ObjectIDFromHex(id)
-		if err != nil {
+		num, err := strconv.ParseInt(id, 10, 64)
+		if err != nil || num == 0 {
 			writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid staff id"})
 			return
 		}
-		result, err := db.Collection("staff").DeleteOne(r.Context(), bson.M{"_id": objID})
-		if err != nil || result.DeletedCount == 0 {
+		result, err := db.ExecContext(r.Context(), "DELETE FROM staff WHERE id = ?", num)
+		if err != nil {
 			writeJSON(w, http.StatusNotFound, map[string]any{"error": "Staff member not found."})
 			return
 		}
-		_, _ = db.Collection("admins").UpdateMany(r.Context(), bson.M{"staffId": id}, bson.M{"$set": bson.M{"staffId": nil}})
+		deleted, _ := result.RowsAffected()
+		if deleted == 0 {
+			writeJSON(w, http.StatusNotFound, map[string]any{"error": "Staff member not found."})
+			return
+		}
+		_, _ = db.ExecContext(r.Context(), "UPDATE admins SET staffId = NULL WHERE staffId = ?", id)
 		writeJSON(w, http.StatusOK, map[string]any{"success": true})
 	})
 

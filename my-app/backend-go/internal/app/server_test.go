@@ -303,3 +303,39 @@ func TestThreadTokenErrors(t *testing.T) {
 		t.Errorf("expected 400 Bad Request or 404 for invalid thread reply, got %d", rr.Code)
 	}
 }
+
+func TestMessageStatusUpdates(t *testing.T) {
+	srv := setupTestServer(t)
+
+	// Create message
+	msgPayload, _ := json.Marshal(map[string]string{
+		"topic":   "Bullying",
+		"message": "Report of concern.",
+	})
+	req := httptest.NewRequest(http.MethodPost, "/api/messages", bytes.NewReader(msgPayload))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	srv.Router.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("POST /api/messages expected 201, got %d", rr.Code)
+	}
+
+	var msgResp struct {
+		Message struct {
+			ID string `json:"id"`
+		} `json:"message"`
+	}
+	_ = json.Unmarshal(rr.Body.Bytes(), &msgResp)
+
+	if msgResp.Message.ID != "" {
+		// Mark as read
+		req = httptest.NewRequest(http.MethodPatch, "/api/messages/"+msgResp.Message.ID+"/read", nil)
+		rr = httptest.NewRecorder()
+		srv.Router.ServeHTTP(rr, req)
+
+		if rr.Code != http.StatusOK {
+			t.Errorf("PATCH /api/messages/:id/read expected status 200, got %d", rr.Code)
+		}
+	}
+}

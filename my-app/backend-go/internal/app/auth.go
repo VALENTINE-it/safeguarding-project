@@ -3,19 +3,19 @@ package app
 import (
 	"crypto/rand"
 	"crypto/sha512"
+	"database/sql"
 	"encoding/hex"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/golang-jwt/jwt/v5"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func authRoutes(db *mongo.Database) http.Handler {
+func authRoutes(store *Store) http.Handler {
+	db := store.DB()
 	r := chi.NewRouter()
 
 	r.Post("/register", func(w http.ResponseWriter, r *http.Request) {
@@ -42,18 +42,19 @@ func authRoutes(db *mongo.Database) http.Handler {
 			return
 		}
 
-		var existing Admin
-		err := db.Collection("admins").FindOne(r.Context(), bson.M{"$or": []bson.M{{"username": username}, {"email": email}}}).Decode(&existing)
+		// Check for existing username or email.
+		var existingID int64
+		err := db.QueryRowContext(r.Context(), "SELECT id FROM admins WHERE username = ? OR email = ?", username, email).Scan(&existingID)
 		if err == nil {
 			writeJSON(w, http.StatusConflict, map[string]any{"error": "Username or email already exists."})
 			return
-		} else if err != mongo.ErrNoDocuments {
+		} else if err != sql.ErrNoRows {
 			writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Unable to register admin account."})
 			return
 		}
 
-		count, err := db.Collection("admins").CountDocuments(r.Context(), bson.M{})
-		if err != nil {
+		var count int
+		if err := db.QueryRowContext(r.Context(), "SELECT COUNT(*) FROM admins").Scan(&count); err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Unable to register admin account."})
 			return
 		}
@@ -64,22 +65,26 @@ func authRoutes(db *mongo.Database) http.Handler {
 
 		var staffID *string
 		if payload.StaffID != "" {
-			staffObjectID, err := primitive.ObjectIDFromHex(payload.StaffID)
-			if err != nil {
+			var staffIDNum int64
+			if parsed, err := strconv.ParseInt(payload.StaffID, 10, 64); err == nil {
+				staffIDNum = parsed
+			}
+			if staffIDNum == 0 {
 				writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Selected staff member could not be found."})
 				return
 			}
 			var staff Staff
-			if err := db.Collection("staff").FindOne(r.Context(), bson.M{"_id": staffObjectID}).Decode(&staff); err != nil {
+			err := db.QueryRowContext(r.Context(), "SELECT id, name, role FROM staff WHERE id = ?", staffIDNum).Scan(&staff.ID, &staff.Name, &staff.Role)
+			if err != nil {
 				writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Selected staff member could not be found."})
 				return
 			}
-			var linked Admin
-			err = db.Collection("admins").FindOne(r.Context(), bson.M{"staffId": payload.StaffID}).Decode(&linked)
+			var linkedID int64
+			err = db.QueryRowContext(r.Context(), "SELECT id FROM admins WHERE staffId = ?", payload.StaffID).Scan(&linkedID)
 			if err == nil {
 				writeJSON(w, http.StatusConflict, map[string]any{"error": "That staff member is already linked to another admin account."})
 				return
-			} else if err != mongo.ErrNoDocuments {
+			} else if err != sql.ErrNoRows {
 				writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Unable to register admin account."})
 				return
 			}
@@ -88,20 +93,17 @@ func authRoutes(db *mongo.Database) http.Handler {
 
 		salt := randomHex(16)
 		hash := hashPassword(password, salt)
-		admin := Admin{
-			Username:     username,
-			Email:        email,
-			PasswordHash: hash,
-			Salt:         salt,
-			StaffID:      staffID,
-		}
-		result, err := db.Collection("admins").InsertOne(r.Context(), admin)
+		now := time.Now().UTC()
+		result, err := db.ExecContext(r.Context(),
+			"INSERT INTO admins (username, email, passwordHash, salt, staffId, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?)",
+			username, email, hash, salt, staffID, now, now)
 		if err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Unable to register admin account."})
 			return
 		}
-		admin.ID = objectIDFromInsert(result)
-		token := signJWT(admin.ID.Hex(), "")
+		id, _ := result.LastInsertId()
+		admin := Admin{ID: id, Username: username, Email: email, StaffID: staffID, CreatedAt: now, UpdatedAt: now}
+		token := signJWT(strconv.FormatInt(admin.ID, 10), "")
 		writeJSON(w, http.StatusCreated, map[string]any{"success": true, "token": token, "admin": admin.public()})
 	})
 
@@ -123,32 +125,72 @@ func authRoutes(db *mongo.Database) http.Handler {
 		}
 
 		var admin Admin
-		err := db.Collection("admins").FindOne(r.Context(), bson.M{"$or": []bson.M{{"username": username}, {"email": strings.ToLower(username)}}}).Decode(&admin)
+		var loginHistoryRaw sql.NullString
+		var staffIDRaw sql.NullString
+		var updatedAtRaw sql.NullTime
+		err := db.QueryRowContext(r.Context(),
+			"SELECT id, username, email, passwordHash, salt, staffId, loginHistory, createdAt, updatedAt FROM admins WHERE username = ? OR email = ?",
+			username, strings.ToLower(username)).Scan(
+			&admin.ID, &admin.Username, &admin.Email, &admin.PasswordHash, &admin.Salt, &staffIDRaw, &loginHistoryRaw, &admin.CreatedAt, &updatedAtRaw)
 		if err != nil {
 			writeJSON(w, http.StatusUnauthorized, map[string]any{"error": "Invalid username/email or password."})
 			return
 		}
+		if staffIDRaw.Valid {
+			admin.StaffID = &staffIDRaw.String
+		}
+		if updatedAtRaw.Valid {
+			admin.UpdatedAt = updatedAtRaw.Time.UTC()
+		}
+		admin.CreatedAt = admin.CreatedAt.UTC()
 		if !checkPassword(password, admin.Salt, admin.PasswordHash) {
 			writeJSON(w, http.StatusUnauthorized, map[string]any{"error": "Invalid username/email or password."})
 			return
 		}
 
+		if loginHistoryRaw.Valid {
+			admin.LoginHistory = unmarshalLoginHistory(loginHistoryRaw.String)
+		}
 		admin.LoginHistory = append(admin.LoginHistory, LoginHistoryEntry{IP: r.RemoteAddr, UserAgent: r.UserAgent(), CreatedAt: time.Now().UTC()})
-		_, _ = db.Collection("admins").UpdateOne(r.Context(), bson.M{"_id": admin.ID}, bson.M{"$set": bson.M{"loginHistory": admin.LoginHistory}})
+		if data, err := marshalLoginHistory(admin.LoginHistory); err == nil {
+			_, _ = db.ExecContext(r.Context(), "UPDATE admins SET loginHistory = ? WHERE id = ?", data, admin.ID)
+		}
 
-		token := signJWT(admin.ID.Hex(), "")
+		token := signJWT(strconv.FormatInt(admin.ID, 10), "")
 		writeJSON(w, http.StatusOK, map[string]any{"success": true, "token": token, "admin": admin.public()})
 	})
 
 	r.Get("/admins", func(w http.ResponseWriter, r *http.Request) {
-		var admins []Admin
-		cursor, err := db.Collection("admins").Find(r.Context(), bson.M{})
+		rows, err := db.QueryContext(r.Context(), "SELECT id, username, email, staffId, loginHistory, createdAt, updatedAt FROM admins")
 		if err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to fetch admin accounts."})
 			return
 		}
-		defer cursor.Close(r.Context())
-		if err := cursor.All(r.Context(), &admins); err != nil {
+		defer rows.Close()
+
+		var admins []Admin
+		for rows.Next() {
+			var a Admin
+			var loginHistoryRaw sql.NullString
+			var staffIDRaw sql.NullString
+			var createdAt time.Time
+			var updatedAtRaw sql.NullTime
+			if err := rows.Scan(&a.ID, &a.Username, &a.Email, &staffIDRaw, &loginHistoryRaw, &createdAt, &updatedAtRaw); err != nil {
+				continue
+			}
+			if staffIDRaw.Valid {
+				a.StaffID = &staffIDRaw.String
+			}
+			a.CreatedAt = createdAt.UTC()
+			if updatedAtRaw.Valid {
+				a.UpdatedAt = updatedAtRaw.Time.UTC()
+			}
+			if loginHistoryRaw.Valid {
+				a.LoginHistory = unmarshalLoginHistory(loginHistoryRaw.String)
+			}
+			admins = append(admins, a)
+		}
+		if err := rows.Err(); err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to fetch admin accounts."})
 			return
 		}
@@ -162,22 +204,12 @@ func authRoutes(db *mongo.Database) http.Handler {
 
 		staffByID := map[string]Staff{}
 		if len(staffIds) > 0 {
-			objectIDs := make([]primitive.ObjectID, 0, len(staffIds))
 			for _, id := range staffIds {
-				if objID, err := primitive.ObjectIDFromHex(id); err == nil {
-					objectIDs = append(objectIDs, objID)
-				}
-			}
-			if len(objectIDs) > 0 {
-				staffCursor, err := db.Collection("staff").Find(r.Context(), bson.M{"_id": bson.M{"$in": objectIDs}})
-				if err == nil {
-					var staffRecords []Staff
-					if err := staffCursor.All(r.Context(), &staffRecords); err == nil {
-						for _, s := range staffRecords {
-							staffByID[s.ID.Hex()] = s
-						}
+				if num, err := strconv.ParseInt(id, 10, 64); err == nil {
+					var s Staff
+					if err := db.QueryRowContext(r.Context(), "SELECT id, name, role FROM staff WHERE id = ?", num).Scan(&s.ID, &s.Name, &s.Role); err == nil {
+						staffByID[id] = s
 					}
-					staffCursor.Close(r.Context())
 				}
 			}
 		}
@@ -196,51 +228,40 @@ func authRoutes(db *mongo.Database) http.Handler {
 	})
 
 	r.Delete("/admins/{id}", func(w http.ResponseWriter, r *http.Request) {
-		id := chi.URLParam(r, "id")
-		objID, err := primitive.ObjectIDFromHex(id)
-		if err != nil {
-			writeJSON(w, http.StatusNotFound, map[string]any{"error": "Admin account not found."})
-			return
-		}
-
-		result, err := db.Collection("admins").DeleteOne(r.Context(), bson.M{"_id": objID})
-		if err != nil {
-			writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to delete admin account."})
-			return
-		}
-		if result.DeletedCount == 0 {
-			writeJSON(w, http.StatusNotFound, map[string]any{"error": "Admin account not found."})
-			return
-		}
-
-		writeJSON(w, http.StatusOK, map[string]any{"success": true, "deletedCount": result.DeletedCount})
+		handleDeleteAdmin(w, r, db)
 	})
 
 	r.Delete("/admins/{id}/", func(w http.ResponseWriter, r *http.Request) {
-		id := chi.URLParam(r, "id")
-		objID, err := primitive.ObjectIDFromHex(id)
-		if err != nil {
-			writeJSON(w, http.StatusNotFound, map[string]any{"error": "Admin account not found."})
-			return
-		}
-
-		result, err := db.Collection("admins").DeleteOne(r.Context(), bson.M{"_id": objID})
-		if err != nil {
-			writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to delete admin account."})
-			return
-		}
-		if result.DeletedCount == 0 {
-			writeJSON(w, http.StatusNotFound, map[string]any{"error": "Admin account not found."})
-			return
-		}
-
-		writeJSON(w, http.StatusOK, map[string]any{"success": true, "deletedCount": result.DeletedCount})
+		handleDeleteAdmin(w, r, db)
 	})
 
 	return r
 }
 
-func superAuthRoutes(db *mongo.Database) http.Handler {
+func handleDeleteAdmin(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+	id := chi.URLParam(r, "id")
+	num, err := strconv.ParseInt(id, 10, 64)
+	if err != nil || num == 0 {
+		writeJSON(w, http.StatusNotFound, map[string]any{"error": "Admin account not found."})
+		return
+	}
+
+	result, err := db.ExecContext(r.Context(), "DELETE FROM admins WHERE id = ?", num)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to delete admin account."})
+		return
+	}
+	deleted, _ := result.RowsAffected()
+	if deleted == 0 {
+		writeJSON(w, http.StatusNotFound, map[string]any{"error": "Admin account not found."})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{"success": true, "deletedCount": deleted})
+}
+
+func superAuthRoutes(store *Store) http.Handler {
+	db := store.DB()
 	r := chi.NewRouter()
 
 	r.Post("/register", func(w http.ResponseWriter, r *http.Request) {
@@ -262,30 +283,33 @@ func superAuthRoutes(db *mongo.Database) http.Handler {
 			return
 		}
 
-		var existing SuperAdmin
-		err := db.Collection("superadmins").FindOne(r.Context(), bson.M{"$or": []bson.M{{"username": payload.Username}, {"email": strings.ToLower(payload.Email)}}}).Decode(&existing)
+		var existingID int64
+		err := db.QueryRowContext(r.Context(), "SELECT id FROM superadmins WHERE username = ? OR email = ?", payload.Username, strings.ToLower(payload.Email)).Scan(&existingID)
 		if err == nil {
 			writeJSON(w, http.StatusConflict, map[string]any{"error": "Super Admin username or email already exists."})
 			return
-		} else if err != mongo.ErrNoDocuments {
+		} else if err != sql.ErrNoRows {
 			writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Unable to register Super Admin account."})
 			return
 		}
-		count, err := db.Collection("superadmins").CountDocuments(r.Context(), bson.M{})
-		if err != nil || count >= 2 {
+		var count int
+		if err := db.QueryRowContext(r.Context(), "SELECT COUNT(*) FROM superadmins").Scan(&count); err != nil || count >= 2 {
 			writeJSON(w, http.StatusForbidden, map[string]any{"error": "Super Admin registration limit reached. Maximum of 2 Super Admin accounts allowed."})
 			return
 		}
 		salt := randomHex(16)
 		hash := hashPassword(payload.Password, salt)
-		admin := SuperAdmin{Username: strings.TrimSpace(payload.Username), Email: strings.ToLower(strings.TrimSpace(payload.Email)), PasswordHash: hash, Salt: salt}
-		result, err := db.Collection("superadmins").InsertOne(r.Context(), admin)
+		now := time.Now().UTC()
+		result, err := db.ExecContext(r.Context(),
+			"INSERT INTO superadmins (username, email, passwordHash, salt, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)",
+			strings.TrimSpace(payload.Username), strings.ToLower(strings.TrimSpace(payload.Email)), hash, salt, now, now)
 		if err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Unable to register Super Admin account."})
 			return
 		}
-		admin.ID = objectIDFromInsert(result)
-		writeJSON(w, http.StatusCreated, map[string]any{"success": true, "token": signJWT(admin.ID.Hex(), "superadmin"), "superAdmin": admin.public()})
+		id, _ := result.LastInsertId()
+		admin := SuperAdmin{ID: id, Username: strings.TrimSpace(payload.Username), Email: strings.ToLower(strings.TrimSpace(payload.Email)), CreatedAt: now, UpdatedAt: now}
+		writeJSON(w, http.StatusCreated, map[string]any{"success": true, "token": signJWT(strconv.FormatInt(admin.ID, 10), "superadmin"), "superAdmin": admin.public()})
 	})
 
 	r.Post("/login", func(w http.ResponseWriter, r *http.Request) {
@@ -298,29 +322,60 @@ func superAuthRoutes(db *mongo.Database) http.Handler {
 			return
 		}
 		superAdmin := SuperAdmin{}
-		err := db.Collection("superadmins").FindOne(r.Context(), bson.M{"$or": []bson.M{{"username": payload.Username}, {"email": strings.ToLower(payload.Username)}}}).Decode(&superAdmin)
+		var loginHistoryRaw sql.NullString
+		var updatedAtRaw sql.NullTime
+		err := db.QueryRowContext(r.Context(),
+			"SELECT id, username, email, passwordHash, salt, loginHistory, createdAt, updatedAt FROM superadmins WHERE username = ? OR email = ?",
+			payload.Username, strings.ToLower(payload.Username)).Scan(
+			&superAdmin.ID, &superAdmin.Username, &superAdmin.Email, &superAdmin.PasswordHash, &superAdmin.Salt, &loginHistoryRaw, &superAdmin.CreatedAt, &updatedAtRaw)
 		if err != nil {
 			writeJSON(w, http.StatusUnauthorized, map[string]any{"error": "Invalid Super Admin credentials."})
 			return
 		}
+		if updatedAtRaw.Valid {
+			superAdmin.UpdatedAt = updatedAtRaw.Time.UTC()
+		}
+		superAdmin.CreatedAt = superAdmin.CreatedAt.UTC()
 		if !checkPassword(payload.Password, superAdmin.Salt, superAdmin.PasswordHash) {
 			writeJSON(w, http.StatusUnauthorized, map[string]any{"error": "Invalid Super Admin credentials."})
 			return
 		}
+		if loginHistoryRaw.Valid {
+			superAdmin.LoginHistory = unmarshalLoginHistory(loginHistoryRaw.String)
+		}
 		superAdmin.LoginHistory = append(superAdmin.LoginHistory, LoginHistoryEntry{IP: r.RemoteAddr, UserAgent: r.UserAgent(), CreatedAt: time.Now().UTC()})
-		_, _ = db.Collection("superadmins").UpdateOne(r.Context(), bson.M{"_id": superAdmin.ID}, bson.M{"$set": bson.M{"loginHistory": superAdmin.LoginHistory}})
-		writeJSON(w, http.StatusOK, map[string]any{"success": true, "token": signJWT(superAdmin.ID.Hex(), "superadmin"), "superAdmin": superAdmin.public()})
+		if data, err := marshalLoginHistory(superAdmin.LoginHistory); err == nil {
+			_, _ = db.ExecContext(r.Context(), "UPDATE superadmins SET loginHistory = ? WHERE id = ?", data, superAdmin.ID)
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"success": true, "token": signJWT(strconv.FormatInt(superAdmin.ID, 10), "superadmin"), "superAdmin": superAdmin.public()})
 	})
 
 	r.Get("/superadmins", func(w http.ResponseWriter, r *http.Request) {
-		var superAdmins []SuperAdmin
-		cursor, err := db.Collection("superadmins").Find(r.Context(), bson.M{})
+		rows, err := db.QueryContext(r.Context(), "SELECT id, username, email, loginHistory, createdAt, updatedAt FROM superadmins")
 		if err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to fetch Super Admin accounts."})
 			return
 		}
-		defer cursor.Close(r.Context())
-		if err := cursor.All(r.Context(), &superAdmins); err != nil {
+		defer rows.Close()
+		var superAdmins []SuperAdmin
+		for rows.Next() {
+			var s SuperAdmin
+			var loginHistoryRaw sql.NullString
+			var createdAt time.Time
+			var updatedAtRaw sql.NullTime
+			if err := rows.Scan(&s.ID, &s.Username, &s.Email, &loginHistoryRaw, &createdAt, &updatedAtRaw); err != nil {
+				continue
+			}
+			s.CreatedAt = createdAt.UTC()
+			if updatedAtRaw.Valid {
+				s.UpdatedAt = updatedAtRaw.Time.UTC()
+			}
+			if loginHistoryRaw.Valid {
+				s.LoginHistory = unmarshalLoginHistory(loginHistoryRaw.String)
+			}
+			superAdmins = append(superAdmins, s)
+		}
+		if err := rows.Err(); err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to fetch Super Admin accounts."})
 			return
 		}
@@ -359,16 +414,4 @@ func randomHex(n int) string {
 	buf := make([]byte, n)
 	_, _ = rand.Read(buf)
 	return hex.EncodeToString(buf)
-}
-
-func objectIDFromInsert(result *mongo.InsertOneResult) primitive.ObjectID {
-	if id, ok := result.InsertedID.(primitive.ObjectID); ok {
-		return id
-	}
-	if id, ok := result.InsertedID.(string); ok {
-		if oid, err := primitive.ObjectIDFromHex(id); err == nil {
-			return oid
-		}
-	}
-	return primitive.NewObjectID()
 }

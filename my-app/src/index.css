@@ -154,6 +154,7 @@ code {
 }
 
 .badge {
+  margin-left: 23%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -193,6 +194,7 @@ code {
 }
 
 .portal-link-primary {
+  margin-left: 15%;
   background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
   color: #ffffff;
 }

@@ -237,6 +237,50 @@ func TestAuthRoutes(t *testing.T) {
 	}
 }
 
+func TestAdminRegisterAsStaff(t *testing.T) {
+	srv := setupTestServer(t)
+
+	// Register Admin with isStaff = "YES"
+	regPayload, _ := json.Marshal(map[string]string{
+		"username": "staffadmin",
+		"email":    "staffadmin@example.com",
+		"password": "password123",
+		"isStaff":  "YES",
+	})
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/register", bytes.NewReader(regPayload))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	srv.Router.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("POST /api/auth/register with isStaff expected 201, got %d (%s)", rr.Code, rr.Body.String())
+	}
+
+	// Verify staff created in staff management
+	req = httptest.NewRequest(http.MethodGet, "/api/staff", nil)
+	rr = httptest.NewRecorder()
+	srv.Router.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("GET /api/staff expected status 200, got %d", rr.Code)
+	}
+
+	var staffListResp struct {
+		Success bool `json:"success"`
+		Staff   []struct {
+			ID   string `json:"id"`
+			Name string `json:"name"`
+			Role string `json:"role"`
+		} `json:"staff"`
+	}
+	if err := json.Unmarshal(rr.Body.Bytes(), &staffListResp); err != nil {
+		t.Fatalf("Failed to unmarshal staff response: %v", err)
+	}
+	if len(staffListResp.Staff) != 1 || staffListResp.Staff[0].Name != "staffadmin" || staffListResp.Staff[0].Role != "Admin" {
+		t.Fatalf("Expected staff member 'staffadmin' with role 'Admin', got: %+v", staffListResp.Staff)
+	}
+}
+
 func TestAuthFailures(t *testing.T) {
 	srv := setupTestServer(t)
 

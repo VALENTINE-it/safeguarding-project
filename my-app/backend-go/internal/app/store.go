@@ -1,10 +1,7 @@
 package app
 
 import (
-	"crypto/rand"
-	"crypto/sha512"
 	"database/sql"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -200,62 +197,56 @@ func scanBoolPtr(v sql.NullInt64) *bool {
 }
 
 func (s *Store) seedDefaults() error {
+	now := time.Now().UTC()
+
 	var superCount int
 	if err := s.db.QueryRow("SELECT COUNT(*) FROM superadmins").Scan(&superCount); err == nil && superCount == 0 {
-		now := time.Now().UTC()
-		buf := make([]byte, 16)
-		_, _ = rand.Read(buf)
-		salt := hex.EncodeToString(buf)
-
-		h := sha512.New()
-		_, _ = h.Write([]byte("password123"))
-		_, _ = h.Write([]byte(salt))
-		hash := hex.EncodeToString(h.Sum(nil))
-
-		_, err := s.db.Exec(
-			"INSERT INTO superadmins (username, email, passwordHash, salt, createdAt) VALUES (?, ?, ?, ?, ?)",
-			"superadmin", "superadmin@example.com", hash, salt, now,
-		)
+		// Seed real SuperAdmin from dump.sql: Owano
+		_, err = s.db.Exec(`
+			INSERT INTO superadmins (username, email, passwordHash, salt, createdAt)
+			VALUES ('Owano', 'valentineawili@gmail.com',
+				'48e2c73bc1ab72cdc8ae38cbd64f793da58cea470dffa3e48dc4aab4dbcee110e251a118f0a1a9bea3570d05c23cb884cba1108e0e709dea299a6e1728094a75',
+				'3daeffe9443c49135dab99a2cffc4509', ?);
+		`, now)
 		if err != nil {
-			log.Printf("failed to seed superadmin: %v", err)
-		} else {
-			log.Printf("seeded default superadmin: superadmin / password123")
+			log.Printf("failed to seed Owano superadmin: %v", err)
 		}
 	}
 
 	var adminCount int
 	if err := s.db.QueryRow("SELECT COUNT(*) FROM admins").Scan(&adminCount); err == nil && adminCount == 0 {
-		now := time.Now().UTC()
-		res, err := s.db.Exec(
-			"INSERT INTO staff (name, role, createdAt, updatedAt) VALUES (?, ?, ?, ?)",
-			"Awili", "Admin", now, now,
-		)
-		var staffID *string
-		if err == nil {
-			id, _ := res.LastInsertId()
-			sID := fmt.Sprintf("%d", id)
-			staffID = &sID
-		}
+		// Seed staff entries
+		_, _ = s.db.Exec("INSERT INTO staff (id, name, role, createdAt, updatedAt) VALUES (1, 'Awili', 'Admin', ?, ?)", now, now)
+		_, _ = s.db.Exec("INSERT INTO staff (id, name, role, createdAt, updatedAt) VALUES (2, 'Clay', 'Admin', ?, ?)", now, now)
 
-		buf := make([]byte, 16)
-		_, _ = rand.Read(buf)
-		salt := hex.EncodeToString(buf)
+		// Seed real Admin: Awili
+		_, _ = s.db.Exec(`
+			INSERT INTO admins (id, username, email, passwordHash, salt, staffId, createdAt, updatedAt)
+			VALUES (1, 'Awili', 'awili@gmail.com',
+				'062ba80236c34716e3098cffc5b0a1e8d4f694eb9db8c5fd855268309b7838990aa1d4c4549d0eef91e253f38ea7d7b61f4ebf2f0c0692f5c2d84a469eef55c5',
+				'3b3b5d42d4a012a5a2eeffc005e40865', '1', ?, ?);
+		`, now, now)
 
-		h := sha512.New()
-		_, _ = h.Write([]byte("password123"))
-		_, _ = h.Write([]byte(salt))
-		hash := hex.EncodeToString(h.Sum(nil))
-
-		_, err = s.db.Exec(
-			"INSERT INTO admins (username, email, passwordHash, salt, staffId, createdAt) VALUES (?, ?, ?, ?, ?, ?)",
-			"Awili", "awili@example.com", hash, salt, staffID, now,
-		)
-		if err != nil {
-			log.Printf("failed to seed admin: %v", err)
-		} else {
-			log.Printf("seeded default admin: Awili / password123")
-		}
+		// Seed real Admin: Clay
+		_, _ = s.db.Exec(`
+			INSERT INTO admins (id, username, email, passwordHash, salt, staffId, createdAt, updatedAt)
+			VALUES (2, 'Clay', 'mikewillmakeit@gmail.com',
+				'595df3ec203c1d4911bcd0b22830eae0569ebc0f056e15fe508d38701a1c4b9f767f1833ef8082a8c9a07f578cff67d169f0739e0476d79996164129270ff85d',
+				'198205748f0e0464bdabe166b01fbb6d', '2', ?, ?);
+		`, now, now)
 	}
+
+	var msgCount int
+	if err := s.db.QueryRow("SELECT COUNT(*) FROM messages").Scan(&msgCount); err == nil && msgCount == 0 {
+		_, _ = s.db.Exec("INSERT INTO messages (id, topic, message, reportedStaff, threadToken, isRead, isDeleted, readAt, createdAt) VALUES (1, 'hello', 'hi', NULL, 'f041cfe085391097cfeac461', 1, 0, ?, ?)", now, now)
+		_, _ = s.db.Exec("INSERT INTO messages (id, topic, message, reportedStaff, threadToken, isRead, isDeleted, readAt, createdAt) VALUES (2, 'Test', 'Awili', '1', '53a472718e821fac7f59d80d', 1, 0, ?, ?)", now, now)
+		_, _ = s.db.Exec("INSERT INTO messages (id, topic, message, reportedStaff, threadToken, isRead, isDeleted, readAt, createdAt) VALUES (3, 'Greetings', 'hi', NULL, '733e00942de3c74b0b215127', 1, 0, ?, ?)", now, now)
+		_, _ = s.db.Exec("INSERT INTO messages (id, topic, message, reportedStaff, threadToken, isRead, isDeleted, readAt, createdAt) VALUES (4, 'Greetings', 'hello', NULL, '5bcaeca17fd26090dfef8d64', 1, 0, ?, ?)", now, now)
+		_, _ = s.db.Exec("INSERT INTO messages (id, topic, message, reportedStaff, threadToken, isRead, isDeleted, readAt, createdAt) VALUES (5, 'ytguy', 'hy', NULL, '68dd1183a89dfd3b4de1e40c', 1, 0, ?, ?)", now, now)
+		_, _ = s.db.Exec("INSERT INTO messages (id, topic, message, reportedStaff, threadToken, isRead, isDeleted, readAt, createdAt) VALUES (6, 'test', 'test', NULL, 'c405efb8afc10480e7f8bab0', 1, 0, ?, ?)", now, now)
+		_, _ = s.db.Exec("INSERT INTO messages (id, topic, message, reportedStaff, threadToken, isRead, isDeleted, readAt, createdAt) VALUES (7, 'hg', 'hg', '1', '1ea483a3fd23497f2fe1f37e', 1, 0, ?, ?)", now, now)
+	}
+
 	return nil
 }
 

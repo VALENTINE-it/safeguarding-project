@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
 
 	_ "modernc.org/sqlite"
 )
@@ -18,6 +20,11 @@ type Store struct {
 func OpenStore(path string) (*Store, error) {
 	if path == "" {
 		path = "safeguarding.db"
+	}
+	if dir := filepath.Dir(path); dir != "" && dir != "." {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return nil, fmt.Errorf("failed to create database directory %s: %w", dir, err)
+		}
 	}
 	log.Printf("opening SQLite database at %s", path)
 

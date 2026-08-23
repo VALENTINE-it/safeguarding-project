@@ -2,7 +2,7 @@ package app
 
 import (
 	"encoding/json"
-	"log"
+	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -29,7 +29,7 @@ func NewServer() (*Server, error) {
 
 	store, err := OpenStore(os.Getenv("DB_PATH"))
 	if err != nil {
-		log.Printf("database connection unavailable: %v", err)
+		return nil, fmt.Errorf("database connection failed: %w", err)
 	}
 
 	r := chi.NewRouter()

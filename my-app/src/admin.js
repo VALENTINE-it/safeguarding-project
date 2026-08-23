@@ -126,7 +126,9 @@ if (storedAdmin) {
 try {
 const parsedAdmin = JSON.parse(storedAdmin);
 setAdminName(parsedAdmin.username || parsedAdmin.email || 'Admin');
-currentStaffId = parsedAdmin.staffId || '';
+if (parsedAdmin.staffId) {
+currentStaffId = typeof parsedAdmin.staffId === 'object' ? (parsedAdmin.staffId.id || '') : String(parsedAdmin.staffId);
+}
 setStaffId(currentStaffId);
 } catch (error) {
 console.error('Failed to parse admin user:', error);

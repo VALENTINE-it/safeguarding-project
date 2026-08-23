@@ -24,6 +24,7 @@ func authRoutes(store *Store) http.Handler {
 			Email    string `json:"email"`
 			Password string `json:"password"`
 			StaffID  string `json:"staffId"`
+			IsStaff  any    `json:"isStaff"`
 		}
 		if err := decodePayload(r, &payload); err != nil {
 			writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid JSON payload"})
@@ -63,8 +64,31 @@ func authRoutes(store *Store) http.Handler {
 			return
 		}
 
+		isStaffYes := false
+		switch v := payload.IsStaff.(type) {
+		case string:
+			s := strings.ToUpper(strings.TrimSpace(v))
+			if s == "YES" || s == "TRUE" || s == "1" {
+				isStaffYes = true
+			}
+		case bool:
+			isStaffYes = v
+		}
+
 		var staffID *string
-		if payload.StaffID != "" {
+		if isStaffYes {
+			now := time.Now().UTC()
+			res, err := db.ExecContext(r.Context(),
+				"INSERT INTO staff (name, role, createdAt, updatedAt) VALUES (?, ?, ?, ?)",
+				username, "Admin", now, now)
+			if err != nil {
+				writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Unable to register admin account."})
+				return
+			}
+			newID, _ := res.LastInsertId()
+			sID := strconv.FormatInt(newID, 10)
+			staffID = &sID
+		} else if payload.StaffID != "" {
 			var staffIDNum int64
 			if parsed, err := strconv.ParseInt(payload.StaffID, 10, 64); err == nil {
 				staffIDNum = parsed

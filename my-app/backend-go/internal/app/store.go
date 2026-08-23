@@ -1,12 +1,16 @@
 package app
 
 import (
+	"crypto/rand"
+	"crypto/sha512"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
+	"time"
 
 	_ "modernc.org/sqlite"
 )
@@ -23,14 +27,20 @@ func OpenStore(path string) (*Store, error) {
 	}
 	if dir := filepath.Dir(path); dir != "" && dir != "." {
 		if err := os.MkdirAll(dir, 0755); err != nil {
-			return nil, fmt.Errorf("failed to create database directory %s: %w", dir, err)
+			log.Printf("warning: unable to create database directory %s (%v), falling back to ./safeguarding.db", dir, err)
+			path = "safeguarding.db"
 		}
 	}
 	log.Printf("opening SQLite database at %s", path)
 
 	db, err := sql.Open("sqlite", path)
 	if err != nil {
-		return nil, err
+		log.Printf("warning: unable to open SQLite database at %s (%v), falling back to ./safeguarding.db", path, err)
+		path = "safeguarding.db"
+		db, err = sql.Open("sqlite", path)
+		if err != nil {
+			return nil, fmt.Errorf("failed to open SQLite database: %w", err)
+		}
 	}
 	// Reasonable pool settings for a single-file SQLite DB.
 	db.SetMaxOpenConns(1)
@@ -45,6 +55,11 @@ func OpenStore(path string) (*Store, error) {
 		_ = db.Close()
 		return nil, err
 	}
+
+	if err := s.seedDefaults(); err != nil {
+		log.Printf("seed defaults warning: %v", err)
+	}
+
 	return s, nil
 }
 
@@ -182,5 +197,65 @@ func scanBoolPtr(v sql.NullInt64) *bool {
 	}
 	b := v.Int64 != 0
 	return &b
+}
+
+func (s *Store) seedDefaults() error {
+	var superCount int
+	if err := s.db.QueryRow("SELECT COUNT(*) FROM superadmins").Scan(&superCount); err == nil && superCount == 0 {
+		now := time.Now().UTC()
+		buf := make([]byte, 16)
+		_, _ = rand.Read(buf)
+		salt := hex.EncodeToString(buf)
+
+		h := sha512.New()
+		_, _ = h.Write([]byte("password123"))
+		_, _ = h.Write([]byte(salt))
+		hash := hex.EncodeToString(h.Sum(nil))
+
+		_, err := s.db.Exec(
+			"INSERT INTO superadmins (username, email, passwordHash, salt, createdAt) VALUES (?, ?, ?, ?, ?)",
+			"superadmin", "superadmin@example.com", hash, salt, now,
+		)
+		if err != nil {
+			log.Printf("failed to seed superadmin: %v", err)
+		} else {
+			log.Printf("seeded default superadmin: superadmin / password123")
+		}
+	}
+
+	var adminCount int
+	if err := s.db.QueryRow("SELECT COUNT(*) FROM admins").Scan(&adminCount); err == nil && adminCount == 0 {
+		now := time.Now().UTC()
+		res, err := s.db.Exec(
+			"INSERT INTO staff (name, role, createdAt, updatedAt) VALUES (?, ?, ?, ?)",
+			"Awili", "Admin", now, now,
+		)
+		var staffID *string
+		if err == nil {
+			id, _ := res.LastInsertId()
+			sID := fmt.Sprintf("%d", id)
+			staffID = &sID
+		}
+
+		buf := make([]byte, 16)
+		_, _ = rand.Read(buf)
+		salt := hex.EncodeToString(buf)
+
+		h := sha512.New()
+		_, _ = h.Write([]byte("password123"))
+		_, _ = h.Write([]byte(salt))
+		hash := hex.EncodeToString(h.Sum(nil))
+
+		_, err = s.db.Exec(
+			"INSERT INTO admins (username, email, passwordHash, salt, staffId, createdAt) VALUES (?, ?, ?, ?, ?, ?)",
+			"Awili", "awili@example.com", hash, salt, staffID, now,
+		)
+		if err != nil {
+			log.Printf("failed to seed admin: %v", err)
+		} else {
+			log.Printf("seeded default admin: Awili / password123")
+		}
+	}
+	return nil
 }
 

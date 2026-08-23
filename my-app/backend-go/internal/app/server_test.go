@@ -276,7 +276,14 @@ func TestAdminRegisterAsStaff(t *testing.T) {
 	if err := json.Unmarshal(rr.Body.Bytes(), &staffListResp); err != nil {
 		t.Fatalf("Failed to unmarshal staff response: %v", err)
 	}
-	if len(staffListResp.Staff) != 1 || staffListResp.Staff[0].Name != "staffadmin" || staffListResp.Staff[0].Role != "Admin" {
+	found := false
+	for _, member := range staffListResp.Staff {
+		if member.Name == "staffadmin" && member.Role == "Admin" {
+			found = true
+			break
+		}
+	}
+	if !found {
 		t.Fatalf("Expected staff member 'staffadmin' with role 'Admin', got: %+v", staffListResp.Staff)
 	}
 }

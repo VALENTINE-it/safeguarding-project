@@ -63,4 +63,10 @@ Run the frontend container:
 docker run -p 3000:3000 safeguarding-frontend
 ```
 
+### Database
+
+On Terminal:sudo apt update && sudo apt install sqlitebrowser -y
+            :sqlitebrowser
+            :safeguarding.db
+            
 If you also want to run the Go backend in Docker, use the backend service configuration from the Go project directory.

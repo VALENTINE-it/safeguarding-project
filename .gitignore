@@ -1,0 +1,12 @@
+# SQLite database files
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Environment Variables
+.env
+.env.local
+
+# Go build outputs
+bin/

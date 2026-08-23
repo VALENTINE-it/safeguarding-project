@@ -1,18 +1,14 @@
 package app
 
 import (
-	"context"
 	"encoding/json"
 	"log"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 const defaultPort = "5000"
@@ -21,7 +17,7 @@ const defaultPort = "5000"
 type Server struct {
 	http.Server
 	Router *chi.Mux
-	DB     *mongo.Database
+	Store  *Store
 }
 
 // NewServer wires routes and initializes the API server.
@@ -31,9 +27,9 @@ func NewServer() (*Server, error) {
 		port = defaultPort
 	}
 
-	db, err := connectDB()
+	store, err := OpenStore(os.Getenv("DB_PATH"))
 	if err != nil {
-		log.Printf("mongo connection unavailable: %v", err)
+		log.Printf("database connection unavailable: %v", err)
 	}
 
 	r := chi.NewRouter()
@@ -55,6 +51,12 @@ func NewServer() (*Server, error) {
 		})
 	})
 
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, http.StatusOK, map[string]any{
+			"message": "Safeguarding API is running",
+		})
+	})
+
 	r.Get("/api/health", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]any{
 			"status":    "ok",
@@ -62,12 +64,12 @@ func NewServer() (*Server, error) {
 		})
 	})
 
-	r.Route("/api", func(r chi.Router) {
-		r.Mount("/auth", authRoutes(db))
-		r.Mount("/super-auth", superAuthRoutes(db))
-		r.Mount("/messages", messagesRoutes(db))
-		r.Mount("/threads", threadsRoutes(db))
-		r.Mount("/staff", staffRoutes(db))
+r.Route("/api", func(r chi.Router) {
+		r.Mount("/auth", authRoutes(store))
+		r.Mount("/super-auth", superAuthRoutes(store))
+		r.Mount("/messages", messagesRoutes(store))
+		r.Mount("/threads", threadsRoutes(store))
+		r.Mount("/staff", staffRoutes(store))
 	})
 
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
@@ -83,32 +85,10 @@ func NewServer() (*Server, error) {
 			IdleTimeout:       30 * time.Second,
 		},
 		Router: r,
-		DB:     db,
+		Store:  store,
 	}
 
 	return srv, nil
-}
-
-func connectDB() (*mongo.Database, error) {
-	uri := os.Getenv("MONGO_URI")
-	if uri == "" {
-		uri = "mongodb://localhost:27017/safeguarding"
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
-	if err != nil {
-		return nil, err
-	}
-
-	if err := client.Ping(ctx, nil); err != nil {
-		return nil, err
-	}
-
-	log.Printf("connected to MongoDB at %s", strings.TrimPrefix(uri, "mongodb://"))
-	return client.Database("safeguarding"), nil
 }
 
 func writeJSON(w http.ResponseWriter, status int, payload any) {
@@ -138,12 +118,12 @@ func mustEnv(key string) string {
 	return "safeguarding_secret_key_2026"
 }
 
-func ensureDB(db *mongo.Database) bool {
-	return db != nil
+func ensureDB(store *Store) bool {
+	return store != nil && store.DB() != nil
 }
 
-func requireDB(db *mongo.Database, w http.ResponseWriter) bool {
-	if db == nil {
+func requireDB(store *Store, w http.ResponseWriter) bool {
+	if store == nil || store.DB() == nil {
 		writeJSON(w, http.StatusServiceUnavailable, map[string]any{"error": "Database unavailable"})
 		return false
 	}

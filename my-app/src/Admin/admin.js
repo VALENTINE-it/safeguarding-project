@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import './form.css';import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Admin from "./admin";
+import './form.css';
 
 function Admin() {
     const [unreadMessages, setUnreadMessages] = useState([]);
@@ -106,3 +105,5 @@ function Admin() {
         </div>
     );
 }
+
+export default Admin;

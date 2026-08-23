@@ -1,0 +1,54 @@
+-- Schema definition for Safeguarding project SQLite database
+
+CREATE TABLE IF NOT EXISTS admins (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	username TEXT NOT NULL,
+	email TEXT NOT NULL,
+	passwordHash TEXT NOT NULL,
+	salt TEXT NOT NULL,
+	staffId TEXT,
+	loginHistory TEXT,
+	createdAt DATETIME NOT NULL,
+	updatedAt DATETIME
+);
+
+CREATE TABLE IF NOT EXISTS superadmins (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	username TEXT NOT NULL,
+	email TEXT NOT NULL,
+	passwordHash TEXT NOT NULL,
+	salt TEXT NOT NULL,
+	loginHistory TEXT,
+	createdAt DATETIME NOT NULL,
+	updatedAt DATETIME
+);
+
+CREATE TABLE IF NOT EXISTS staff (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name TEXT NOT NULL,
+	role TEXT NOT NULL DEFAULT '',
+	createdAt DATETIME NOT NULL,
+	updatedAt DATETIME
+);
+
+CREATE TABLE IF NOT EXISTS messages (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	topic TEXT NOT NULL,
+	message TEXT NOT NULL,
+	reportedStaff TEXT,
+	threadToken TEXT NOT NULL,
+	isRead INTEGER NOT NULL DEFAULT 0,
+	isDeleted INTEGER NOT NULL DEFAULT 0,
+	readAt DATETIME,
+	createdAt DATETIME NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS replies (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	threadToken TEXT NOT NULL,
+	topic TEXT NOT NULL,
+	message TEXT NOT NULL,
+	isDeleted INTEGER NOT NULL DEFAULT 0,
+	createdAt DATETIME NOT NULL,
+	updatedAt DATETIME
+);

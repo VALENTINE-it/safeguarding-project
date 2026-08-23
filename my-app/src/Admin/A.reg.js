@@ -9,8 +9,7 @@ function AdminReg() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [staffId, setStaffId] = useState('');
-    const [staffList, setStaffList] = useState([]);
+    const [isStaff, setIsStaff] = useState('');
     const [error, setError] = useState('');
     const [adminCount, setAdminCount] = useState(0);
     const [limitReached, setLimitReached] = useState(false);
@@ -29,13 +28,6 @@ function AdminReg() {
                         setError('Admin registration limit reached. Maximum of 3 administrator accounts allowed.');
                     }
                 }
-
-                // Load staff list
-                const staffRes = await fetch(`${API_URL}/api/staff`);
-                const staffData = await staffRes.json();
-                if (staffData.success) {
-                    setStaffList(staffData.staff || []);
-                }
             } catch (err) {
                 console.error('Failed to load initial registration data:', err);
             }
@@ -53,7 +45,7 @@ function AdminReg() {
             return;
         }
 
-        if (!username || !email || !password || !confirmPassword) {
+        if (!username || !email || !password || !confirmPassword || !isStaff) {
             setError('Please fill in all fields.');
             return;
         }
@@ -67,7 +59,7 @@ function AdminReg() {
             const response = await fetch(`${API_URL}/api/auth/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, email, password, staffId: staffId || undefined }),
+                body: JSON.stringify({ username, email, password, isStaff }),
             });
             const data = await response.json();
 
@@ -150,20 +142,16 @@ function AdminReg() {
                     </label>
 
                     <label className="auth-field">
-                        Are you also a staff member? (optional)
+                        Are you also a staff member?
                         <select
                             className="auth-input"
-                            value={staffId}
+                            value={isStaff}
                             disabled={limitReached}
-                            onChange={(e) => setStaffId(e.target.value)}
+                            onChange={(e) => setIsStaff(e.target.value)}
                         >
-                            <option value="">Not applicable</option>
-                            {staffList.map((member) => (
-                                <option key={member.id} value={member.id}>
-                                    {member.name}
-                                    {member.role ? ` — ${member.role}` : ''}
-                                </option>
-                            ))}
+                            <option value="">Select YES or NO</option>
+                            <option value="YES">YES</option>
+                            <option value="NO">NO</option>
                         </select>
                     </label>
 

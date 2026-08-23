@@ -17,9 +17,9 @@ my-app/node_modules/
 # Production Builds
 build/
 /build
-dist/
+dist/ 
 
-# Environment Variables and Secrets (Safeguards your MONGO_URI)
+# Environment Variables and Secrets (Safeguards your DB_PATH and SQLite database)
 .env
 .env.local
 .env.development.local
@@ -27,6 +27,12 @@ dist/
 .env.production.local
 **/.env
 **/.env*.local
+
+# SQLite database files
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
 
 # Miscellaneous / Logs
 .DS_Store

@@ -7,6 +7,7 @@ function AdminReg() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [isStaff, setIsStaff] = useState('');
     const [error, setError] = useState('');
     const navigate = useNavigate();
 
@@ -14,7 +15,7 @@ function AdminReg() {
         event.preventDefault();
         setError('');
 
-        if (!username || !email || !password || !confirmPassword) {
+        if (!username || !email || !password || !confirmPassword || !isStaff) {
             setError('Please fill in all fields.');
             return;
         }
@@ -32,7 +33,7 @@ function AdminReg() {
             return;
         }
 
-        const newUser = { username, email, password };
+        const newUser = { username, email, password, isStaff };
         localStorage.setItem('adminUsers', JSON.stringify([...users, newUser]));
         navigate('/admin/login');
     };
@@ -86,6 +87,19 @@ function AdminReg() {
                             onChange={(e) => setConfirmPassword(e.target.value)}
                             placeholder="Confirm Password"
                         />
+                    </label>
+
+                    <label className="auth-field">
+                        Are you also a staff member?
+                        <select
+                            className="auth-input"
+                            value={isStaff}
+                            onChange={(e) => setIsStaff(e.target.value)}
+                        >
+                            <option value="">Select YES or NO</option>
+                            <option value="YES">YES</option>
+                            <option value="NO">NO</option>
+                        </select>
                     </label>
 
                     {error && <p className="form-error">{error}</p>}

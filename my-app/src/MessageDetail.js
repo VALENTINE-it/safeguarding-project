@@ -20,7 +20,7 @@ function MessageDetail() {
         if (storedAdmin) {
           try {
             const parsedAdmin = JSON.parse(storedAdmin);
-            const currentStaffId = parsedAdmin.staffId || '';
+            const currentStaffId = typeof parsedAdmin.staffId === 'object' ? (parsedAdmin.staffId?.id || '') : (parsedAdmin.staffId || '');
             setStaffId(currentStaffId);
             if (currentStaffId) params.append('staffId', currentStaffId);
           } catch (parseErr) {

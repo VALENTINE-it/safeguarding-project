@@ -1,0 +1,41 @@
+# Render Blueprint specification for Safeguarding Project
+# https://render.com/docs/blueprint-spec
+
+services:
+  # -------------------------------------------------------------
+  # Backend: Go Web Service
+  # -------------------------------------------------------------
+  - type: web
+    name: safeguarding-backend
+    runtime: go
+    rootDir: my-app/backend-go
+    buildCommand: go build -o server ./cmd/server
+    startCommand: ./server
+    healthCheckPath: /api/health
+    envVars:
+      - key: PORT
+        value: 5000
+      - key: DB_PATH
+        value: ./safeguarding.db
+      - key: JWT_SECRET
+        generateValue: true
+
+  # -------------------------------------------------------------
+  # Frontend: React Static Site
+  # -------------------------------------------------------------
+  - type: static
+    name: safeguarding-frontend
+    rootDir: my-app
+    buildCommand: npm install && npm run build
+    staticPublishPath: build
+    routes:
+      # Rewrite all routes to index.html for React Router SPA
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: REACT_APP_API_URL
+        fromService:
+          type: web
+          name: safeguarding-backend
+          property: host

@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './form.css';
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
 function Admin() {
 const [messages, setMessages] = useState([]);
 const [loading, setLoading] = useState(true);
@@ -31,7 +33,7 @@ const fetchMessages = useCallback(async (token = searchToken, date = selectedDat
     if (date) params.append('date', date);
     if (currentStaffId) params.append('staffId', currentStaffId);
 
-    const response = await fetch(`http://localhost:5000/api/messages?${params.toString()}`);
+    const response = await fetch(`${API_URL}/api/messages?${params.toString()}`);
     const data = await response.json();
 
 if (data.success) {
@@ -50,7 +52,7 @@ const params = new URLSearchParams();
 if (staffId) params.append('staffId', staffId);
 
 const response = await fetch(
-`http://localhost:5000/api/messages/${messageId}/read?${params.toString()}`,
+`${API_URL}/api/messages/${messageId}/read?${params.toString()}`,
 { method: 'PATCH' }
 );
 const data = await response.json();
@@ -78,7 +80,7 @@ current.map((message) => ({ ...message, isRead: true, readAt: new Date().toISOSt
 try {
 const params = new URLSearchParams();
 if (staffId) params.append('staffId', staffId);
-const response = await fetch(`http://localhost:5000/api/messages/mark-all-read?${params.toString()}`, { method: 'PATCH' });
+const response = await fetch(`${API_URL}/api/messages/mark-all-read?${params.toString()}`, { method: 'PATCH' });
 const data = await response.json();
 if (!data.success) {
 console.warn('mark-all-read returned non-success', data);

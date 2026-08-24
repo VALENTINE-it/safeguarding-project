@@ -7,18 +7,76 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
+	_ "github.com/tursodatabase/libsql-client-go/libsql"
 	_ "modernc.org/sqlite"
 )
 
-// Store wraps the SQLite database handle.
+// Store wraps the SQLite / libSQL database handle.
 type Store struct {
 	db *sql.DB
 }
 
-// OpenStore opens the SQLite database at the given path and ensures the schema exists.
+func buildTursoURL(rawURL, token string) string {
+	rawURL = strings.TrimSpace(rawURL)
+	token = strings.TrimSpace(token)
+	if token == "" || strings.Contains(rawURL, "authToken=") {
+		return rawURL
+	}
+	if strings.Contains(rawURL, "?") {
+		return rawURL + "&authToken=" + token
+	}
+	return rawURL + "?authToken=" + token
+}
+
+// OpenStore opens the Turso / libSQL cloud database (if configured) or local SQLite database.
 func OpenStore(path string) (*Store, error) {
+	tursoURL := os.Getenv("TURSO_DATABASE_URL")
+	if tursoURL == "" {
+		tursoURL = os.Getenv("DB_URL")
+	}
+	tursoToken := os.Getenv("TURSO_AUTH_TOKEN")
+	if tursoToken == "" {
+		tursoToken = os.Getenv("DB_AUTH_TOKEN")
+	}
+
+	if strings.HasPrefix(path, "libsql://") || strings.HasPrefix(path, "https://") || strings.Contains(path, ".turso.io") {
+		tursoURL = path
+	}
+
+	if tursoURL != "" {
+		fullURL := buildTursoURL(tursoURL, tursoToken)
+		displayURL := strings.Split(tursoURL, "?")[0]
+		log.Printf("connecting to Turso / libSQL cloud database at %s", displayURL)
+
+		db, err := sql.Open("libsql", fullURL)
+		if err != nil {
+			return nil, fmt.Errorf("failed to open Turso database: %w", err)
+		}
+		db.SetMaxOpenConns(25)
+		db.SetMaxIdleConns(5)
+		db.SetConnMaxLifetime(5 * time.Minute)
+
+		if err := db.Ping(); err != nil {
+			_ = db.Close()
+			return nil, fmt.Errorf("failed to connect to Turso database: %w", err)
+		}
+
+		s := &Store{db: db}
+		if err := s.migrate(); err != nil {
+			_ = db.Close()
+			return nil, err
+		}
+
+		if err := s.seedDefaults(); err != nil {
+			log.Printf("seed defaults warning: %v", err)
+		}
+
+		return s, nil
+	}
+
 	if path == "" {
 		path = "safeguarding.db"
 	}

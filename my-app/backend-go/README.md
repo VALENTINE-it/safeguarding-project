@@ -55,7 +55,16 @@ export DB_PATH=./safeguarding.db
 export JWT_SECRET=safeguarding_secret_key_2026
 ```
 
-`DB_PATH` is optional. If it is not set, the database defaults to `./safeguarding.db` in the current working directory. The schema is created automatically on first start.
+### Turso Cloud Database (Recommended for Free Cloud Persistence)
+
+To connect to a free hosted Turso SQLite cloud database:
+
+```bash
+export TURSO_DATABASE_URL=libsql://<your-db-name>-<your-org>.turso.io
+export TURSO_AUTH_TOKEN=<your-turso-auth-token>
+```
+
+When `TURSO_DATABASE_URL` is provided, the backend connects to Turso automatically and provisions the schema and default accounts. If not set, it defaults to a local `./safeguarding.db` SQLite file.
 
 ---
 

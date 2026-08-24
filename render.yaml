@@ -17,6 +17,10 @@ services:
         value: 5000
       - key: DB_PATH
         value: ./safeguarding.db
+      - key: TURSO_DATABASE_URL
+        sync: false
+      - key: TURSO_AUTH_TOKEN
+        sync: false
       - key: JWT_SECRET
         generateValue: true
 

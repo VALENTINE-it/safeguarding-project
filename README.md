@@ -1,12 +1,12 @@
 # Safeguarding — Go Backend
 
-A secure, anonymous messaging API for the Safeguarding React app, implemented in Go and backed by MongoDB.
+A secure, anonymous messaging API for the Safeguarding React app, implemented in Go and backed by SQLite.
 
 ---
 
 ## Overview
 
-The backend now runs as a single Go service in [backend-go](../backend-go). The Go server exposes the core API surface for:
+The backend runs as a single Go service in [my-app/backend-go](my-app/backend-go). The Go server exposes the core API surface for:
 
 - anonymous message submission
 - thread retrieval and replies
@@ -19,7 +19,7 @@ The backend now runs as a single Go service in [backend-go](../backend-go). The 
 ## Project structure
 
 ```text
-backend-go/
+my-app/backend-go/
 ├── cmd/
 │   └── server/
 │       └── main.go              # application entry point
@@ -41,7 +41,7 @@ backend-go/
 ## Prerequisites
 
 - Go 1.22+
-- MongoDB running locally or reachable via a connection string
+- SQLite (no external database server required; database is created automatically)
 
 ---
 
@@ -51,11 +51,11 @@ Set the following environment variables before starting the server:
 
 ```bash
 export PORT=5000
-export MONGO_URI=mongodb://localhost:27017/safeguarding
+export DB_PATH=./safeguarding.db
 export JWT_SECRET=safeguarding_secret_key_2026
 ```
 
-If you are using a different MongoDB instance, replace the URI accordingly.
+`DB_PATH` is optional. If not set, it defaults to `./safeguarding.db` in the current working directory.
 
 ---
 
@@ -132,4 +132,4 @@ go test ./...
 ## Notes
 
 - The Go service keeps the same JSON responses and endpoint paths as the original backend where possible so the React frontend can continue using the same API contract.
-- If the MongoDB service is unavailable, the server will still start but database-backed requests will fail until the database is reachable.
+- The database is a local SQLite file (`safeguarding.db`). When deploying to production (Docker, Render, Fly.io, etc.), ensure a persistent volume is mounted and `DB_PATH` points to the persistent storage location.

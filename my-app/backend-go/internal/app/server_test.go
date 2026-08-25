@@ -2,7 +2,9 @@ package app
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -447,5 +449,124 @@ func TestSuperAuthRoutes(t *testing.T) {
 
 	if rr.Code != http.StatusOK {
 		t.Fatalf("POST /api/super-auth/login expected status 200, got %d (%s)", rr.Code, rr.Body.String())
+	}
+}
+
+func TestGoogleAuthAdmin(t *testing.T) {
+	srv := setupTestServer(t)
+
+	// Mock Google Token Verification
+	oldFunc := verifyGoogleTokenFunc
+	defer func() { verifyGoogleTokenFunc = oldFunc }()
+
+	verifyGoogleTokenFunc = func(ctx context.Context, idToken string) (*GoogleClaims, error) {
+		if idToken == "valid-admin-google-token" {
+			return &GoogleClaims{
+				Sub:           "google-sub-123",
+				Email:         "googleadmin@example.com",
+				EmailVerified: "true",
+				Name:          "Google Admin",
+				Iss:           "https://accounts.google.com",
+			}, nil
+		}
+		if idToken == "unverified-google-token" {
+			return &GoogleClaims{
+				Sub:           "google-sub-456",
+				Email:         "unverified@example.com",
+				EmailVerified: "false",
+				Name:          "Unverified User",
+				Iss:           "https://accounts.google.com",
+			}, errors.New("google account email is not verified")
+		}
+		return nil, errors.New("invalid or expired Google token")
+	}
+
+	// 1. Unverified token fails
+	badPayload, _ := json.Marshal(map[string]string{
+		"credential": "unverified-google-token",
+	})
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/google", bytes.NewReader(badPayload))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	srv.Router.ServeHTTP(rr, req)
+	if rr.Code != http.StatusUnauthorized {
+		t.Fatalf("Expected 401 for unverified Google email, got %d (%s)", rr.Code, rr.Body.String())
+	}
+
+	// 2. New Google user registers automatically
+	regPayload, _ := json.Marshal(map[string]string{
+		"credential": "valid-admin-google-token",
+		"isStaff":    "YES",
+	})
+	req = httptest.NewRequest(http.MethodPost, "/api/auth/google", bytes.NewReader(regPayload))
+	req.Header.Set("Content-Type", "application/json")
+	rr = httptest.NewRecorder()
+	srv.Router.ServeHTTP(rr, req)
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("Expected 201 Created for new Google admin registration, got %d (%s)", rr.Code, rr.Body.String())
+	}
+
+	var regResp struct {
+		Success bool `json:"success"`
+		Token   string `json:"token"`
+		Admin   struct {
+			Email string `json:"email"`
+		} `json:"admin"`
+	}
+	if err := json.Unmarshal(rr.Body.Bytes(), &regResp); err != nil || regResp.Admin.Email != "googleadmin@example.com" {
+		t.Fatalf("Unexpected registration response: %+v", regResp)
+	}
+
+	// 3. Existing Google user logs in automatically
+	loginPayload, _ := json.Marshal(map[string]string{
+		"credential": "valid-admin-google-token",
+	})
+	req = httptest.NewRequest(http.MethodPost, "/api/auth/google", bytes.NewReader(loginPayload))
+	req.Header.Set("Content-Type", "application/json")
+	rr = httptest.NewRecorder()
+	srv.Router.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("Expected 200 OK for existing Google admin login, got %d (%s)", rr.Code, rr.Body.String())
+	}
+}
+
+func TestGoogleAuthSuperAdmin(t *testing.T) {
+	srv := setupTestServer(t)
+
+	oldFunc := verifyGoogleTokenFunc
+	defer func() { verifyGoogleTokenFunc = oldFunc }()
+
+	verifyGoogleTokenFunc = func(ctx context.Context, idToken string) (*GoogleClaims, error) {
+		if idToken == "valid-super-google-token" {
+			return &GoogleClaims{
+				Sub:           "super-sub-123",
+				Email:         "googlesuper@example.com",
+				EmailVerified: "true",
+				Name:          "Super Google",
+				Iss:           "https://accounts.google.com",
+			}, nil
+		}
+		return nil, errors.New("invalid or expired Google token")
+	}
+
+	// 1. New Google Super Admin registers
+	regPayload, _ := json.Marshal(map[string]string{
+		"credential": "valid-super-google-token",
+	})
+	req := httptest.NewRequest(http.MethodPost, "/api/super-auth/google", bytes.NewReader(regPayload))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	srv.Router.ServeHTTP(rr, req)
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("Expected 201 Created for new Google super admin, got %d (%s)", rr.Code, rr.Body.String())
+	}
+
+	// 2. Existing Google Super Admin logs in
+	req = httptest.NewRequest(http.MethodPost, "/api/super-auth/google", bytes.NewReader(regPayload))
+	req.Header.Set("Content-Type", "application/json")
+	rr = httptest.NewRecorder()
+	srv.Router.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("Expected 200 OK for existing Google super admin login, got %d (%s)", rr.Code, rr.Body.String())
 	}
 }

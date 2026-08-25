@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import GoogleAuthButton from './GoogleAuthButton';
 import '../form.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
@@ -16,6 +17,43 @@ function SuperAdminRegister() {
   const [superAdminCount, setSuperAdminCount] = useState(0);
   const [limitReached, setLimitReached] = useState(false);
   const navigate = useNavigate();
+
+  const handleGoogleSuccess = async (credential) => {
+    setError('');
+    if (limitReached || superAdminCount >= 2) {
+      setError('Super Admin registration limit reached. Maximum of 2 Super Admin accounts allowed.');
+      return;
+    }
+    setLoading(true);
+
+    try {
+      const response = await fetch(`${API_URL}/api/super-auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        const message = data.error || 'Unable to register Super Admin with Google.';
+        setError(message);
+        if (response.status === 403) {
+          setLimitReached(true);
+        }
+        return;
+      }
+
+      localStorage.setItem('superAdminAuth', 'true');
+      localStorage.setItem('superAdminUser', JSON.stringify(data.superAdmin));
+      localStorage.setItem('adminAuth', 'true');
+      navigate('/admin/super');
+    } catch (err) {
+      console.error('Super Admin Google registration error:', err);
+      setError('Unable to reach server. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     async function checkLimit() {
@@ -213,6 +251,17 @@ function SuperAdminRegister() {
           <button className="auth-button" type="submit" disabled={loading || limitReached}>
             {loading ? 'Creating Account…' : limitReached ? 'Registration Closed' : 'Register Super Admin'}
           </button>
+
+          <div className="auth-divider">
+            <span>OR</span>
+          </div>
+
+          <GoogleAuthButton
+            text="signup_with"
+            disabled={loading || limitReached}
+            onSuccess={handleGoogleSuccess}
+            onError={(errMsg) => setError(errMsg)}
+          />
 
           <div className="auth-link-row">
             <Link className="auth-link" to="/admin/super/login">

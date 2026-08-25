@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import GoogleAuthButton from './GoogleAuthButton';
 import '../form.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
@@ -11,6 +12,36 @@ function SuperAdminLogin() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  const handleGoogleSuccess = async (credential) => {
+    setError('');
+    setLoading(true);
+
+    try {
+      const response = await fetch(`${API_URL}/api/super-auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        const message = data.error || 'Google authentication failed.';
+        setError(message);
+        return;
+      }
+
+      localStorage.setItem('superAdminAuth', 'true');
+      localStorage.setItem('superAdminUser', JSON.stringify(data.superAdmin));
+      localStorage.setItem('adminAuth', 'true');
+      navigate('/admin/super');
+    } catch (err) {
+      console.error('Super Admin Google login error:', err);
+      setError('Unable to reach server. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -110,6 +141,17 @@ function SuperAdminLogin() {
           <button className="auth-button" type="submit" disabled={loading}>
             {loading ? 'Authenticating…' : 'Login as Super Admin'}
           </button>
+
+          <div className="auth-divider">
+            <span>OR</span>
+          </div>
+
+          <GoogleAuthButton
+            text="signin_with"
+            disabled={loading}
+            onSuccess={handleGoogleSuccess}
+            onError={(errMsg) => setError(errMsg)}
+          />
 
           <div className="auth-link-row" style={{ marginTop: '1.25rem', display: 'flex', justifyContent: 'space-between' }}>
             <Link className="auth-link" to="/admin/super/register">

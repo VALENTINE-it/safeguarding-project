@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import './form.css';
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
 function Admin() {
     const [unreadMessages, setUnreadMessages] = useState([]);
     const [readMessages, setReadMessages] = useState([]);
@@ -9,7 +11,7 @@ function Admin() {
 
     const fetchUnreadMessages = async () => {
         try {
-            const response = await fetch('http://localhost:5000/api/messages/unread');
+            const response = await fetch(`${API_URL}/api/messages/unread`);
             const data = await response.json();
 
             if (data.success) {
@@ -24,7 +26,7 @@ function Admin() {
 
     const markAsRead = async (messageId) => {
         try {
-            const response = await fetch(`http://localhost:5000/api/messages/${messageId}/read`, {
+            const response = await fetch(`${API_URL}/api/messages/${messageId}/read`, {
                 method: 'PATCH',
             });
             const data = await response.json();

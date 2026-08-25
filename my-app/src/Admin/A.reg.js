@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import GoogleAuthButton from './GoogleAuthButton';
 import '../form.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
@@ -16,6 +17,37 @@ function AdminReg() {
     const [adminCount, setAdminCount] = useState(0);
     const [limitReached, setLimitReached] = useState(false);
     const navigate = useNavigate();
+
+    const handleGoogleSuccess = async (credential) => {
+        setError('');
+        if (limitReached || adminCount >= 3) {
+            setError('Admin registration limit reached. Maximum of 3 administrator accounts allowed.');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_URL}/api/auth/google`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ credential, isStaff: isStaff || 'NO' }),
+            });
+            const data = await response.json();
+
+            if (!response.ok) {
+                const message = data.error || 'Unable to register admin with Google.';
+                setError(message);
+                if (response.status === 403) {
+                    setLimitReached(true);
+                }
+                return;
+            }
+
+            navigate('/admin/super');
+        } catch (err) {
+            console.error('Google registration error:', err);
+            setError('Unable to reach server. Please try again later.');
+        }
+    };
 
     useEffect(() => {
         async function loadInitialData() {
@@ -203,6 +235,17 @@ function AdminReg() {
                     <button className="auth-button" type="submit" disabled={limitReached}>
                         {limitReached ? 'Registration Closed' : 'Register Admin'}
                     </button>
+
+                    <div className="auth-divider">
+                        <span>OR</span>
+                    </div>
+
+                    <GoogleAuthButton
+                        text="signup_with"
+                        disabled={limitReached}
+                        onSuccess={handleGoogleSuccess}
+                        onError={(errMsg) => setError(errMsg)}
+                    />
 
                     <div className="auth-link-row">
                         <Link className="auth-link" to="/admin/super">Back to Super Admin Portal</Link>

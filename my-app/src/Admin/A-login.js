@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import GoogleAuthButton from './GoogleAuthButton';
 import '../form.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
@@ -9,7 +10,36 @@ function AdminLogin() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  const handleGoogleSuccess = async (credential) => {
+    setError('');
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/api/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        const message = data.error || 'Google authentication failed.';
+        setError(message);
+        return;
+      }
+
+      localStorage.setItem('adminAuth', 'true');
+      localStorage.setItem('adminUser', JSON.stringify(data.admin));
+      navigate('/admin');
+    } catch (err) {
+      console.error('Google login error:', err);
+      setError('Unable to reach server. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -92,9 +122,20 @@ function AdminLogin() {
 
           {error && <p className="form-error">{error}</p>}
 
-          <button className="auth-button" type="submit">Login</button>
+          <button className="auth-button" type="submit" disabled={loading}>
+            {loading ? 'Logging in…' : 'Login'}
+          </button>
 
+          <div className="auth-divider">
+            <span>OR</span>
+          </div>
 
+          <GoogleAuthButton
+            text="signin_with"
+            disabled={loading}
+            onSuccess={handleGoogleSuccess}
+            onError={(errMsg) => setError(errMsg)}
+          />
         </form>
       </div>
     </div>

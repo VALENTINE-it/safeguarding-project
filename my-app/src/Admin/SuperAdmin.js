@@ -19,6 +19,7 @@ function SuperAdmin() {
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('superAdminTheme') || 'light';
   });
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navigate = useNavigate();
 
@@ -26,6 +27,14 @@ function SuperAdmin() {
     const nextTheme = theme === 'light' ? 'dark' : 'light';
     setTheme(nextTheme);
     localStorage.setItem('superAdminTheme', nextTheme);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('superAdminAuth');
+    localStorage.removeItem('superAdminUser');
+    localStorage.removeItem('adminAuth');
+    localStorage.removeItem('adminUser');
+    navigate('/admin/super/login');
   };
 
   const fetchData = useCallback(async () => {
@@ -216,45 +225,101 @@ function SuperAdmin() {
     <div className={`super-admin-root theme-${theme}`}>
       {/* Super Admin Top Header */}
       <header className="super-header">
-        <div className="super-header-left">
-          <span className="super-badge">SUPER ADMIN PORTAL</span>
-          <div className="super-user-info">
-            <span className="super-avatar">S</span>
-            <span className="super-name">{superAdminName}</span>
+        <div className="super-header-top">
+          <div className="super-header-left">
+            <span className="super-badge">SUPER ADMIN PORTAL</span>
+            <div className="super-user-info">
+              <span className="super-avatar">S</span>
+              <span className="super-name">{superAdminName}</span>
+            </div>
+          </div>
+
+          <div className="super-mobile-actions">
+            {/* Quick Logout with Power Icon on mobile */}
+            <button
+              type="button"
+              className="super-logout-btn mobile-logout-btn"
+              onClick={handleLogout}
+              title="Logout"
+              aria-label="Logout"
+            >
+              <svg className="power-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
+                <line x1="12" y1="2" x2="12" y2="12" />
+              </svg>
+            </button>
+
+            {/* Hamburger button visible only on mobile phone width */}
+            <button
+              type="button"
+              className={`super-hamburger-btn ${mobileMenuOpen ? 'open' : ''}`}
+              onClick={() => setMobileMenuOpen((prev) => !prev)}
+              aria-label="Toggle Navigation Menu"
+              aria-expanded={mobileMenuOpen}
+              title="Menu"
+            >
+              {mobileMenuOpen ? (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="18" x2="21" y2="18" />
+                </svg>
+              )}
+            </button>
           </div>
         </div>
 
-        <div className="super-header-right">
+        {/* Navigation Items (Visible on Desktop / Laptop, and in dropdown on mobile when hamburger is open) */}
+        <div className={`super-header-right ${mobileMenuOpen ? 'mobile-menu-open' : ''}`}>
           {/* Theme Toggle Button (Light mode default) */}
           <button
             type="button"
             className="theme-toggle-btn"
-            onClick={toggleTheme}
+            onClick={() => {
+              toggleTheme();
+              setMobileMenuOpen(false);
+            }}
           >
             {theme === 'light' ? 'Dark Mode' : 'Light Mode (Default)'}
           </button>
 
-          <Link to="/admin/staff" className="super-nav-btn staff-btn">
+          <Link
+            to="/admin/staff"
+            className="super-nav-btn staff-btn"
+            onClick={() => setMobileMenuOpen(false)}
+          >
             Staff Management
           </Link>
-          <Link to="/admin" className="super-nav-btn admin-link-btn">
+          <Link
+            to="/admin"
+            className="super-nav-btn admin-link-btn"
+            onClick={() => setMobileMenuOpen(false)}
+          >
             Regular Admin Dashboard
           </Link>
-          <Link to="/admin/register" className="super-nav-btn reg-btn">
+          <Link
+            to="/admin/register"
+            className="super-nav-btn reg-btn"
+            onClick={() => setMobileMenuOpen(false)}
+          >
             Register Admin
           </Link>
           <button
             type="button"
-            className="super-logout-btn"
-            onClick={() => {
-              localStorage.removeItem('superAdminAuth');
-              localStorage.removeItem('superAdminUser');
-              localStorage.removeItem('adminAuth');
-              localStorage.removeItem('adminUser');
-              navigate('/admin/super/login');
-            }}
+            className="super-logout-btn desktop-logout-btn"
+            onClick={handleLogout}
+            title="Logout"
           >
-            Logout
+            <svg className="power-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
+              <line x1="12" y1="2" x2="12" y2="12" />
+            </svg>
+            <span className="logout-text">Logout</span>
           </button>
         </div>
       </header>

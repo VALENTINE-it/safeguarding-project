@@ -24,10 +24,13 @@ function GoogleAuthButton({ onSuccess, onError, disabled = false, text = 'contin
             },
           });
 
+          const containerWidth = buttonRef.current?.parentElement?.clientWidth || buttonRef.current?.offsetWidth || 300;
+          const buttonWidth = Math.min(320, Math.max(Math.floor(containerWidth), 200));
+
           window.google.accounts.id.renderButton(buttonRef.current, {
             theme: 'outline',
             size: 'large',
-            width: 320,
+            width: buttonWidth,
             text: text,
             shape: 'rectangular',
             logo_alignment: 'left',

@@ -153,7 +153,7 @@ function SuperAdminLogin() {
             onError={(errMsg) => setError(errMsg)}
           />
 
-          <div className="auth-link-row" style={{ marginTop: '1.25rem', display: 'flex', justifyContent: 'space-between' }}>
+          <div className="auth-link-row">
             <Link className="auth-link" to="/admin/super/register">
               Create Super Admin Account
             </Link>

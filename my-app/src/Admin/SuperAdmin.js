@@ -230,19 +230,6 @@ function SuperAdmin() {
             type="button"
             className="theme-toggle-btn"
             onClick={toggleTheme}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 14px',
-              borderRadius: '10px',
-              border: '1px solid #cbd5e1',
-              background: theme === 'light' ? '#ffffff' : '#1e293b',
-              color: theme === 'light' ? '#0f172a' : '#f8fafc',
-              fontWeight: '600',
-              cursor: 'pointer',
-              fontSize: '0.85rem',
-            }}
           >
             {theme === 'light' ? 'Dark Mode' : 'Light Mode (Default)'}
           </button>
@@ -453,7 +440,7 @@ function SuperAdmin() {
                   <div
                     className="clean-tooltip-card"
                     style={{
-                      left: `${leftPct}%`,
+                      left: `${Math.min(Math.max(leftPct, 12), 88)}%`,
                       top: `${Math.max(topPct - 25, 5)}%`,
                     }}
                   >

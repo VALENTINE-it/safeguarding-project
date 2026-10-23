@@ -16,4 +16,9 @@
 
 # Go build outputs
 bin/
+**/server
+server
+
+# IDE
+.idea/
 

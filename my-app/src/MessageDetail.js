@@ -127,8 +127,11 @@ function MessageDetail() {
         )}
 
         <div className="page-links-row">
-          <Link to="/admin" className="auth-button">
-            Back to Admin Dashboard
+          <Link
+            to={localStorage.getItem('superAdminAuth') === 'true' ? '/admin/super' : '/admin'}
+            className="auth-button"
+          >
+            {localStorage.getItem('superAdminAuth') === 'true' ? 'Back to Dashboard' : 'Back to Admin Dashboard'}
           </Link>
         </div>
       </div>

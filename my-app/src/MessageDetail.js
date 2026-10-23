@@ -126,9 +126,13 @@ function MessageDetail() {
           </div>
         )}
 
-        <div className="page-links-row">
-          <Link to="/admin" className="auth-button">
-            Back to Admin Dashboard
+        <div className="page-links-row" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          <Link
+            to={localStorage.getItem('superAdminAuth') === 'true' ? '/admin/super' : '/admin'}
+            className="auth-button"
+            style={{ textDecoration: 'none', textAlign: 'center' }}
+          >
+            Back to Dashboard
           </Link>
         </div>
       </div>

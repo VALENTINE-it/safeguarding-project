@@ -7,13 +7,21 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 function SuperAdmin() {
   const [messages, setMessages] = useState([]);
+  const [allMessages, setAllMessages] = useState([]);
   const [admins, setAdmins] = useState([]);
   const [adminCount, setAdminCount] = useState(0);
   const [limitReached, setLimitReached] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [messagesLoading, setMessagesLoading] = useState(false);
   const [timeRange, setTimeRange] = useState('12months');
   const [superAdminName, setSuperAdminName] = useState('Super Admin');
   const [hoveredMonth, setHoveredMonth] = useState(null);
+
+  // Search & Filter controls for incorporated regular admin features
+  const [searchToken, setSearchToken] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
+  const [activeTab, setActiveTab] = useState('all'); // 'all' | 'unread' | 'read'
+  const [copiedToken, setCopiedToken] = useState('');
   
   // Light mode by default as specified in requirements
   const [theme, setTheme] = useState(() => {
@@ -40,11 +48,13 @@ function SuperAdmin() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      // 1. Fetch all messages for monthly complaint graph
+      // 1. Fetch all messages for monthly complaint graph and safeguarding reports
       const msgRes = await fetch(`${API_URL}/api/messages`);
       const msgData = await msgRes.json();
       if (msgData.success) {
-        setMessages(msgData.messages || []);
+        const msgs = msgData.messages || [];
+        setMessages(msgs);
+        setAllMessages(msgs);
       }
 
       // 2. Fetch admin accounts and count (limit = 3) from Admin database
@@ -62,6 +72,97 @@ function SuperAdmin() {
       setLoading(false);
     }
   }, []);
+
+  const fetchFilteredMessages = async (token = searchToken, date = selectedDate) => {
+    setMessagesLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (token.trim()) params.append('threadToken', token.trim());
+      if (date) params.append('date', date);
+
+      const response = await fetch(`${API_URL}/api/messages?${params.toString()}`);
+      const data = await response.json();
+      if (data.success) {
+        setMessages(data.messages || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch filtered messages:', error);
+    } finally {
+      setMessagesLoading(false);
+    }
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    fetchFilteredMessages(searchToken, selectedDate);
+  };
+
+  const handleDateChange = (event) => {
+    const value = event.target.value;
+    setSelectedDate(value);
+    fetchFilteredMessages(searchToken, value);
+  };
+
+  const clearFilters = () => {
+    setSearchToken('');
+    setSelectedDate('');
+    fetchFilteredMessages('', '');
+  };
+
+  const handleCopyToken = (token, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigator.clipboard.writeText(token);
+    setCopiedToken(token);
+    setTimeout(() => setCopiedToken(''), 2000);
+  };
+
+  const markAsRead = async (messageId) => {
+    try {
+      const response = await fetch(
+        `${API_URL}/api/messages/${messageId}/read`,
+        { method: 'PATCH' }
+      );
+      const data = await response.json();
+
+      if (data.success) {
+        setMessages((current) =>
+          current.map((message) =>
+            (message.id || message._id) === messageId ? { ...message, ...data.message, isRead: true } : message
+          )
+        );
+        setAllMessages((current) =>
+          current.map((message) =>
+            (message.id || message._id) === messageId ? { ...message, ...data.message, isRead: true } : message
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Failed to mark message as read:', error);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    const unreadCount = messages.filter((m) => !m.isRead).length;
+    if (unreadCount === 0) return;
+
+    setMessages((current) =>
+      current.map((message) => ({ ...message, isRead: true, readAt: new Date().toISOString() }))
+    );
+    setAllMessages((current) =>
+      current.map((message) => ({ ...message, isRead: true, readAt: new Date().toISOString() }))
+    );
+
+    try {
+      const response = await fetch(`${API_URL}/api/messages/mark-all-read`, { method: 'PATCH' });
+      const data = await response.json();
+      if (!data.success) {
+        console.warn('mark-all-read returned non-success', data);
+      }
+    } catch (err) {
+      console.error('Failed to mark all as read on server:', err);
+    }
+  };
 
   const deleteAdmin = async (adminId) => {
     if (!adminId) {
@@ -149,8 +250,9 @@ function SuperAdmin() {
       });
     }
 
-    // Populate counts from messages
-    messages.forEach((msg) => {
+    // Populate counts from allMessages so graph maintains full analytics
+    const chartSource = allMessages.length > 0 ? allMessages : messages;
+    chartSource.forEach((msg) => {
       if (!msg.createdAt) return;
       const msgDate = new Date(msg.createdAt);
       const msgKey = `${msgDate.getFullYear()}-${String(msgDate.getMonth() + 1).padStart(2, '0')}`;
@@ -171,7 +273,9 @@ function SuperAdmin() {
 
   const monthlyData = getMonthlyData();
   const maxCount = Math.max(...monthlyData.map((m) => m.count), 5);
-  const totalComplaints = messages.length;
+  const totalComplaints = (allMessages.length > 0 ? allMessages : messages).length;
+  const unreadMessages = messages.filter((m) => !m.isRead);
+  const readMessages = messages.filter((m) => m.isRead);
   const avgComplaintsPerMonth = (totalComplaints / monthlyData.length).toFixed(1);
   const peakMonth = monthlyData.reduce((prev, current) => (prev.count > current.count ? prev : current), monthlyData[0] || { label: 'N/A', count: 0 });
   const svgWidth = 840;
@@ -296,13 +400,6 @@ function SuperAdmin() {
             Staff Management
           </Link>
           <Link
-            to="/admin"
-            className="super-nav-btn admin-link-btn"
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            Regular Admin Dashboard
-          </Link>
-          <Link
             to="/admin/register"
             className="super-nav-btn reg-btn"
             onClick={() => setMobileMenuOpen(false)}
@@ -331,8 +428,22 @@ function SuperAdmin() {
           <div>
             <h1 className="super-hero-title">Executive Dashboard</h1>
             <p className="super-hero-desc">
-              Comprehensive overview of safeguarding complaints, staff management, and regular admin accounts.
+              Comprehensive overview of safeguarding complaints, incoming reports, staff management, and admin accounts.
             </p>
+            <div className="hero-stats" style={{ marginTop: '1.25rem' }}>
+              <div className="stat-card">
+                <span className="stat-value">{allMessages.length || messages.length}</span>
+                <span className="stat-label">Total Reports</span>
+              </div>
+              <div className="stat-card highlight-unread">
+                <span className="stat-value">{unreadMessages.length}</span>
+                <span className="stat-label">Unread</span>
+              </div>
+              <div className="stat-card highlight-read">
+                <span className="stat-value">{readMessages.length}</span>
+                <span className="stat-label">Reviewed</span>
+              </div>
+            </div>
           </div>
 
           <div className="super-account-pill">
@@ -525,6 +636,226 @@ function SuperAdmin() {
                   </div>
                 );
               })()}
+            </div>
+          )}
+        </div>
+
+        {/* Incorporated Regular Admin Safeguarding Reports Section */}
+        <div className="admins-table-card" style={{ marginBottom: '2rem' }}>
+          <div className="table-card-header" style={{ marginBottom: '1.25rem' }}>
+            <div>
+              <h2 className="table-title">Safeguarding Reports Management</h2>
+              <p className="table-subtitle">
+                Review, filter, and process confidential safeguarding messages in real time.
+              </p>
+            </div>
+          </div>
+
+          {/* Filter & Search Bar */}
+          <div className="admin-controls-card" style={{ marginBottom: '1.5rem' }}>
+            <form className="admin-search-form" onSubmit={handleSearch}>
+              <div className="search-input-wrap">
+                <span className="search-icon">🔍</span>
+                <input
+                  type="text"
+                  className="admin-input"
+                  placeholder="Search by thread token..."
+                  value={searchToken}
+                  onChange={(e) => setSearchToken(e.target.value)}
+                />
+              </div>
+              <div className="date-input-wrap">
+                <label htmlFor="dateFilter">Filter date:</label>
+                <input
+                  id="dateFilter"
+                  type="date"
+                  className="admin-input date-input"
+                  value={selectedDate}
+                  onChange={handleDateChange}
+                />
+              </div>
+              <button type="submit" className="admin-btn primary-btn">
+                Search
+              </button>
+              {(searchToken || selectedDate) && (
+                <button type="button" className="admin-btn ghost-btn" onClick={clearFilters}>
+                  Reset
+                </button>
+              )}
+            </form>
+
+            <div className="tab-controls">
+              <button
+                type="button"
+                className={`tab-btn ${activeTab === 'all' ? 'active' : ''}`}
+                onClick={() => setActiveTab('all')}
+              >
+                All Sections
+              </button>
+              <button
+                type="button"
+                className={`tab-btn ${activeTab === 'unread' ? 'active' : ''}`}
+                onClick={() => setActiveTab('unread')}
+              >
+                Unread ({unreadMessages.length})
+              </button>
+              <button
+                type="button"
+                className={`tab-btn ${activeTab === 'read' ? 'active' : ''}`}
+                onClick={() => setActiveTab('read')}
+              >
+                Read ({readMessages.length})
+              </button>
+            </div>
+          </div>
+
+          {/* Messages Sections Grid */}
+          {messagesLoading ? (
+            <div className="loading-container">
+              <div className="spinner"></div>
+              <p>Loading safeguarding messages...</p>
+            </div>
+          ) : (
+            <div className="sections-grid">
+              {/* UNREAD MESSAGES SECTION */}
+              {(activeTab === 'all' || activeTab === 'unread') && (
+                <section className="messages-section-card unread-section">
+                  <div className="section-header">
+                    <div className="section-title-wrap">
+                      <span className="section-badge unread-badge-count">{unreadMessages.length}</span>
+                      <h2>📬 Unread Messages</h2>
+                    </div>
+                    {unreadMessages.length > 0 && (
+                      <button type="button" className="mark-all-btn" onClick={markAllAsRead}>
+                        ✓ Mark all as read
+                      </button>
+                    )}
+                  </div>
+
+                  {unreadMessages.length === 0 ? (
+                    <div className="empty-state">
+                      <div className="empty-icon">🎉</div>
+                      <h3>All Caught Up!</h3>
+                      <p>There are no unread safeguarding reports to review.</p>
+                    </div>
+                  ) : (
+                    <div className="messages-list">
+                      {unreadMessages.map((message) => (
+                        <div key={message.id || message._id} className="msg-card unread-msg-card">
+                          <div className="msg-header">
+                            <div className="msg-topic-row">
+                              <span className="pulse-unread-dot" title="Unread Message"></span>
+                              <Link to={`/message/${message.id || message._id}`} className="msg-topic-link">
+                                {message.topic}
+                              </Link>
+                            </div>
+                            {message.reportedStaff && (
+                              <span className="staff-pill">
+                                Re: {message.reportedStaff.name} ({message.reportedStaff.role})
+                              </span>
+                            )}
+                          </div>
+
+                          <p className="msg-body">{message.message}</p>
+
+                          <div className="msg-footer">
+                            <div className="msg-meta-row">
+                              <span
+                                className="token-tag"
+                                onClick={(e) => handleCopyToken(message.threadToken, e)}
+                                title="Click to copy thread token"
+                              >
+                                {message.threadToken}
+                                {copiedToken === message.threadToken && <span className="copy-pop">Copied!</span>}
+                              </span>
+                              <span className="date-tag">
+                                {new Date(message.createdAt || Date.now()).toLocaleString()}
+                              </span>
+                            </div>
+
+                            <div className="msg-actions">
+                              <Link to={`/message/${message.id || message._id}`} className="msg-btn view-btn">
+                                View Details
+                              </Link>
+                              <button
+                                type="button"
+                                className="msg-btn mark-read-btn"
+                                onClick={() => markAsRead(message.id || message._id)}
+                              >
+                                Mark as Read
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              )}
+
+              {/* READ MESSAGES SECTION */}
+              {(activeTab === 'all' || activeTab === 'read') && (
+                <section className="messages-section-card read-section">
+                  <div className="section-header">
+                    <div className="section-title-wrap">
+                      <span className="section-badge read-badge-count">{readMessages.length}</span>
+                      <h2>Read Messages</h2>
+                    </div>
+                  </div>
+
+                  {readMessages.length === 0 ? (
+                    <div className="empty-state">
+                      <div className="empty-icon"></div>
+                      <h3>No Reviewed Messages</h3>
+                      <p>Messages will move here after you review and mark them as read.</p>
+                    </div>
+                  ) : (
+                    <div className="messages-list">
+                      {readMessages.map((message) => (
+                        <div key={message.id || message._id} className="msg-card read-msg-card">
+                          <div className="msg-header">
+                            <div className="msg-topic-row">
+                              <span className="read-check-icon">✓</span>
+                              <Link to={`/message/${message.id || message._id}`} className="msg-topic-link">
+                                {message.topic}
+                              </Link>
+                            </div>
+                            {message.reportedStaff && (
+                              <span className="staff-pill">
+                                Re: {message.reportedStaff.name} ({message.reportedStaff.role})
+                              </span>
+                            )}
+                          </div>
+
+                          <p className="msg-body">{message.message}</p>
+
+                          <div className="msg-footer">
+                            <div className="msg-meta-row">
+                              <span
+                                className="token-tag"
+                                onClick={(e) => handleCopyToken(message.threadToken, e)}
+                                title="Click to copy thread token"
+                              >
+                                {message.threadToken}
+                                {copiedToken === message.threadToken && <span className="copy-pop">Copied!</span>}
+                              </span>
+                              <span className="date-tag">
+                                {new Date(message.createdAt || Date.now()).toLocaleString()}
+                              </span>
+                            </div>
+
+                            <div className="msg-actions">
+                              <Link to={`/message/${message.id || message._id}`} className="msg-btn view-btn">
+                                View Details
+                              </Link>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              )}
             </div>
           )}
         </div>

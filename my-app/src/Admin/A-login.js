@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import GoogleAuthButton from './GoogleAuthButton';
 import '../form.css';
 
@@ -71,6 +71,15 @@ function AdminLogin() {
   return (
     <div className="auth-shell">
       <div className="auth-card">
+        <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '0.75rem' }}>
+          <Link to="/" className="auth-link" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            Back to Home
+          </Link>
+        </div>
         <h1 className="auth-title">Admin Page</h1>
         <p className="auth-copy">Welcome to the admin area. Manage the application and review reports from one secure place.</p>
 
@@ -136,6 +145,17 @@ function AdminLogin() {
             onSuccess={handleGoogleSuccess}
             onError={(errMsg) => setError(errMsg)}
           />
+
+          <div style={{ marginTop: '1.25rem', width: '100%' }}>
+            <button
+              type="button"
+              className="back-btn"
+              style={{ width: '100%', textDecoration: 'none' }}
+              onClick={() => navigate('/')}
+            >
+              ← Back to Home
+            </button>
+          </div>
         </form>
       </div>
     </div>

@@ -94,8 +94,18 @@ function SuperAdminRegister() {
       return;
     }
 
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters long.');
+    if (password.length < 6) {
+      setError('Password must not be less than 6 characters.');
+      return;
+    }
+
+    const hasUpper = /[A-Z]/.test(password);
+    const hasLower = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecial = /[^A-Za-z0-9]/.test(password);
+
+    if (!hasUpper || !hasLower || !hasNumber || !hasSpecial) {
+      setError('Password must contain a mixture of uppercase and lowercase characters, numbers, and special characters.');
       return;
     }
 
@@ -189,7 +199,7 @@ function SuperAdminRegister() {
                 value={password}
                 disabled={limitReached}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password (min 8 chars)"
+                placeholder="Password (min 6 characters)"
               />
               <button
                 type="button"
@@ -211,6 +221,9 @@ function SuperAdminRegister() {
                 )}
               </button>
             </div>
+            <span style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '4px', display: 'block' }}>
+              Must be at least 6 characters with uppercase, lowercase, numbers, and special characters.
+            </span>
           </label>
 
           <label className="auth-field">

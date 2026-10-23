@@ -204,7 +204,7 @@ func TestAuthRoutes(t *testing.T) {
 	regPayload, _ := json.Marshal(map[string]string{
 		"username": "admin1",
 		"email":    "admin1@example.com",
-		"password": "password123",
+		"password": "Password123!",
 	})
 	req := httptest.NewRequest(http.MethodPost, "/api/auth/register", bytes.NewReader(regPayload))
 	req.Header.Set("Content-Type", "application/json")
@@ -218,7 +218,7 @@ func TestAuthRoutes(t *testing.T) {
 	// 2. Login Admin
 	loginPayload, _ := json.Marshal(map[string]string{
 		"username": "admin1",
-		"password": "password123",
+		"password": "Password123!",
 	})
 	req = httptest.NewRequest(http.MethodPost, "/api/auth/login", bytes.NewReader(loginPayload))
 	req.Header.Set("Content-Type", "application/json")
@@ -246,7 +246,7 @@ func TestAdminRegisterAsStaff(t *testing.T) {
 	regPayload, _ := json.Marshal(map[string]string{
 		"username": "staffadmin",
 		"email":    "staffadmin@example.com",
-		"password": "password123",
+		"password": "Password123!",
 		"isStaff":  "YES",
 	})
 	req := httptest.NewRequest(http.MethodPost, "/api/auth/register", bytes.NewReader(regPayload))
@@ -311,7 +311,7 @@ func TestAuthFailures(t *testing.T) {
 	regPayload, _ := json.Marshal(map[string]string{
 		"username": "uniqueadmin",
 		"email":    "unique@example.com",
-		"password": "password123",
+		"password": "Password123!",
 	})
 	req = httptest.NewRequest(http.MethodPost, "/api/auth/register", bytes.NewReader(regPayload))
 	req.Header.Set("Content-Type", "application/json")
@@ -426,7 +426,7 @@ func TestSuperAuthRoutes(t *testing.T) {
 	regPayload, _ := json.Marshal(map[string]string{
 		"username": "super1",
 		"email":    "super1@example.com",
-		"password": "superpassword123",
+		"password": "SuperPassword123!",
 	})
 	req := httptest.NewRequest(http.MethodPost, "/api/super-auth/register", bytes.NewReader(regPayload))
 	req.Header.Set("Content-Type", "application/json")
@@ -440,7 +440,7 @@ func TestSuperAuthRoutes(t *testing.T) {
 	// Login SuperAdmin
 	loginPayload, _ := json.Marshal(map[string]string{
 		"username": "super1",
-		"password": "superpassword123",
+		"password": "SuperPassword123!",
 	})
 	req = httptest.NewRequest(http.MethodPost, "/api/super-auth/login", bytes.NewReader(loginPayload))
 	req.Header.Set("Content-Type", "application/json")
@@ -568,5 +568,33 @@ func TestGoogleAuthSuperAdmin(t *testing.T) {
 	srv.Router.ServeHTTP(rr, req)
 	if rr.Code != http.StatusOK {
 		t.Fatalf("Expected 200 OK for existing Google super admin login, got %d (%s)", rr.Code, rr.Body.String())
+	}
+}
+
+func TestPasswordValidation(t *testing.T) {
+	testCases := []struct {
+		password string
+		valid    bool
+		desc     string
+	}{
+		{"", false, "empty password"},
+		{"Aa1!", false, "too short (less than 6 chars)"},
+		{"password123!", false, "no uppercase"},
+		{"PASSWORD123!", false, "no lowercase"},
+		{"Password!!!!", false, "no numbers"},
+		{"Password1234", false, "no special characters"},
+		{"Aa1!bb", true, "valid 6-character password"},
+		{"Password123!", true, "valid full password"},
+		{"Super$ecure99", true, "valid password with symbol"},
+	}
+
+	for _, tc := range testCases {
+		err := validatePassword(tc.password)
+		if tc.valid && err != nil {
+			t.Errorf("expected password '%s' to be valid, but got error: %v", tc.password, err)
+		}
+		if !tc.valid && err == nil {
+			t.Errorf("expected password '%s' (%s) to be invalid, but got no error", tc.password, tc.desc)
+		}
 	}
 }

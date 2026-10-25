@@ -176,6 +176,31 @@ textarea {
   transform: translateY(-1px);
 }
 
+.download-pdf-btn {
+  background: #0f766e;
+  color: #ffffff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.86rem;
+  font-weight: 600;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-shrink: 0;
+  text-decoration: none;
+  font-family: inherit;
+}
+
+.download-pdf-btn:hover {
+  background: #0d655c;
+  transform: translateY(-1px);
+}
+
 .token-note {
   margin: 4px 0 0;
   font-size: 0.82rem;
@@ -1334,6 +1359,7 @@ textarea {
   background-color: #334155;
   color: #f8fafc;
 }
+
 
 .copied-bubble {
   position: absolute;

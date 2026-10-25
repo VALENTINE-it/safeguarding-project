@@ -186,3 +186,30 @@ export function generateTokenPdf({ token, topic, date, reportedStaff }) {
 
   return header + objects.join('\n') + '\n' + xref.join('\n') + '\n' + trailer;
 }
+
+/**
+ * Initiates an automatic PDF download in the browser.
+ */
+export function downloadTokenPdf({ token, topic, date, reportedStaff }) {
+  try {
+    const pdfString = generateTokenPdf({ token, topic, date, reportedStaff });
+    const bytes = new Uint8Array(pdfString.length);
+    for (let i = 0; i < pdfString.length; i++) {
+      bytes[i] = pdfString.charCodeAt(i) & 0xff;
+    }
+    const blob = new Blob([bytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const safeToken = (token || 'token').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 12) || 'token';
+    link.download = `safeguarding-token-${safeToken}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    return true;
+  } catch (error) {
+    console.error('Failed to generate or download token PDF:', error);
+    return false;
+  }
+}

@@ -22,7 +22,6 @@ function SuperAdmin() {
   const [searchToken, setSearchToken] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'unread' | 'read'
-  const [copiedToken, setCopiedToken] = useState('');
   const [downloadedToken, setDownloadedToken] = useState('');
 
   // Light mode by default as specified in requirements
@@ -108,14 +107,6 @@ function SuperAdmin() {
     setSearchToken('');
     setSelectedDate('');
     fetchFilteredMessages('', '');
-  };
-
-  const handleCopyToken = (token, e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    navigator.clipboard.writeText(token);
-    setCopiedToken(token);
-    setTimeout(() => setCopiedToken(''), 2000);
   };
 
   const handleDownloadToken = (message, e) => {
@@ -709,12 +700,13 @@ function SuperAdmin() {
                                 <button
                                   type="button"
                                   className="super-token-pill"
-                                  onClick={(e) => handleCopyToken(message.threadToken, e)}
-                                  title="Click to copy thread token"
+                                  onClick={(e) => handleDownloadToken(message, e)}
+                                  title="Click to download secure thread token PDF"
                                 >
                                   {message.threadToken}
-                                  {copiedToken === message.threadToken && (
-                                    <span className="copied-bubble">Copied</span>
+                                  <span className="token-pdf-tag">PDF</span>
+                                  {downloadedToken === message.threadToken && (
+                                    <span className="copied-bubble">Downloaded PDF</span>
                                   )}
                                 </button>
                                 <span className="super-date-text">
@@ -783,12 +775,13 @@ function SuperAdmin() {
                                 <button
                                   type="button"
                                   className="super-token-pill"
-                                  onClick={(e) => handleCopyToken(message.threadToken, e)}
-                                  title="Click to copy thread token"
+                                  onClick={(e) => handleDownloadToken(message, e)}
+                                  title="Click to download secure thread token PDF"
                                 >
                                   {message.threadToken}
-                                  {copiedToken === message.threadToken && (
-                                    <span className="copied-bubble">Copied</span>
+                                  <span className="token-pdf-tag">PDF</span>
+                                  {downloadedToken === message.threadToken && (
+                                    <span className="copied-bubble">Downloaded PDF</span>
                                   )}
                                 </button>
                                 <span className="super-date-text">

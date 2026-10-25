@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import '../form.css';
 import './SuperAdmin.css';
+import { downloadTokenPdf } from '../tokenPdf';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
@@ -22,6 +23,7 @@ function SuperAdmin() {
   const [selectedDate, setSelectedDate] = useState('');
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'unread' | 'read'
   const [copiedToken, setCopiedToken] = useState('');
+  const [downloadedToken, setDownloadedToken] = useState('');
 
   // Light mode by default as specified in requirements
   const [theme, setTheme] = useState(() => {
@@ -114,6 +116,27 @@ function SuperAdmin() {
     navigator.clipboard.writeText(token);
     setCopiedToken(token);
     setTimeout(() => setCopiedToken(''), 2000);
+  };
+
+  const handleDownloadToken = (message, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const token = message.threadToken;
+    const staffLabel = message.reportedStaff
+      ? (typeof message.reportedStaff === 'object'
+          ? `${message.reportedStaff.name} (${message.reportedStaff.role})`
+          : message.reportedStaff)
+      : undefined;
+    const dateStr = new Date(message.createdAt || Date.now()).toLocaleString();
+
+    downloadTokenPdf({
+      token,
+      topic: message.topic,
+      reportedStaff: staffLabel,
+      date: dateStr,
+    });
+    setDownloadedToken(token);
+    setTimeout(() => setDownloadedToken(''), 2500);
   };
 
   const markAsRead = async (messageId) => {

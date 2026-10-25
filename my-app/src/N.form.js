@@ -83,6 +83,9 @@ function NewMessageForm({ onBack }) {
   };
 
   if (status === 'success') {
+    const staffObj = staffList.find((s) => (s.id || s._id) === reportedStaff);
+    const staffLabel = staffObj ? `${staffObj.name} (${staffObj.role})` : reportedStaff;
+
     return (
       <div className="form-container">
         <div className="security-banner">
@@ -92,15 +95,20 @@ function NewMessageForm({ onBack }) {
         <div className="form-card">
           <h2>Message Sent</h2>
           <p className="subtitle">
-            Your message has been delivered securely. Copy your token below —
+            Your message has been delivered securely. Download your token PDF below —
             it is the only way to follow up on this thread.
           </p>
 
           <div className="token-box">
             <strong>Your Secure Thread Token</strong>
-            <DownloadToken token={threadToken} />
+            <DownloadToken
+              token={threadToken}
+              topic={topic}
+              reportedStaff={staffLabel}
+              date={new Date().toLocaleString()}
+            />
             <p className="token-note">
-              Copy this token and keep it safe. It will not be shown again.
+              Download this PDF and keep it safe. It contains your token and instructions for following up.
             </p>
           </div>
 

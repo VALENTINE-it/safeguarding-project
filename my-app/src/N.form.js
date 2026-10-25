@@ -1,23 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import './form.css';
+import { downloadTokenPdf } from './tokenPdf';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
-function CopyText({ text }) {
-  const [copied, setCopied] = useState(false);
+function DownloadToken({ token, topic, reportedStaff, date }) {
+  const [downloaded, setDownloaded] = useState(false);
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+  const handleDownload = () => {
+    downloadTokenPdf({ token, topic, reportedStaff, date });
+    setDownloaded(true);
+    setTimeout(() => setDownloaded(false), 2500);
   };
 
   return (
     <div className="copy-container">
-      <code>{text}</code>
-      <button onClick={handleCopy} className="copy-btn">
-        {copied ? 'Copied!' : 'Copy'}
+      <code>{token}</code>
+      <button type="button" onClick={handleDownload} className="download-pdf-btn">
+        {downloaded ? 'Downloaded PDF' : 'Download PDF'}
       </button>
     </div>
   );
@@ -98,7 +98,7 @@ function NewMessageForm({ onBack }) {
 
           <div className="token-box">
             <strong>Your Secure Thread Token</strong>
-            <CopyText text={threadToken} />
+            <DownloadToken token={threadToken} />
             <p className="token-note">
               Copy this token and keep it safe. It will not be shown again.
             </p>

@@ -16,7 +16,6 @@ function Admin() {
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('adminTheme') || 'light';
   });
-  const [copiedToken, setCopiedToken] = useState('');
   const [downloadedToken, setDownloadedToken] = useState('');
 
   const navigate = useNavigate();
@@ -107,14 +106,6 @@ function Admin() {
     setSearchToken('');
     setSelectedDate('');
     fetchMessages('', '');
-  };
-
-  const handleCopyToken = (token, e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    navigator.clipboard.writeText(token);
-    setCopiedToken(token);
-    setTimeout(() => setCopiedToken(''), 2000);
   };
 
   const handleDownloadToken = (message, e) => {
@@ -358,12 +349,13 @@ function Admin() {
                               <button
                                 type="button"
                                 className="admin-token-pill"
-                                onClick={(e) => handleCopyToken(message.threadToken, e)}
-                                title="Click to copy thread token"
+                                onClick={(e) => handleDownloadToken(message, e)}
+                                title="Click to download secure thread token PDF"
                               >
                                 {message.threadToken}
-                                {copiedToken === message.threadToken && (
-                                  <span className="copied-bubble">Copied</span>
+                                <span className="token-pdf-tag">PDF</span>
+                                {downloadedToken === message.threadToken && (
+                                  <span className="copied-bubble">Downloaded PDF</span>
                                 )}
                               </button>
                               <span className="admin-date-text">
@@ -434,12 +426,13 @@ function Admin() {
                               <button
                                 type="button"
                                 className="admin-token-pill"
-                                onClick={(e) => handleCopyToken(message.threadToken, e)}
-                                title="Click to copy thread token"
+                                onClick={(e) => handleDownloadToken(message, e)}
+                                title="Click to download secure thread token PDF"
                               >
                                 {message.threadToken}
-                                {copiedToken === message.threadToken && (
-                                  <span className="copied-bubble">Copied</span>
+                                <span className="token-pdf-tag">PDF</span>
+                                {downloadedToken === message.threadToken && (
+                                  <span className="copied-bubble">Downloaded PDF</span>
                                 )}
                               </button>
                               <span className="admin-date-text">

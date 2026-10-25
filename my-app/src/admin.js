@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './form.css';
+import { downloadTokenPdf } from './tokenPdf';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
@@ -16,6 +17,7 @@ function Admin() {
     return localStorage.getItem('adminTheme') || 'light';
   });
   const [copiedToken, setCopiedToken] = useState('');
+  const [downloadedToken, setDownloadedToken] = useState('');
 
   const navigate = useNavigate();
 
@@ -113,6 +115,25 @@ function Admin() {
     navigator.clipboard.writeText(token);
     setCopiedToken(token);
     setTimeout(() => setCopiedToken(''), 2000);
+  };
+
+  const handleDownloadToken = (message, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const token = message.threadToken;
+    const staffLabel = message.reportedStaff
+      ? `${message.reportedStaff.name} (${message.reportedStaff.role})`
+      : undefined;
+    const dateStr = new Date(message.createdAt || Date.now()).toLocaleString();
+
+    downloadTokenPdf({
+      token,
+      topic: message.topic,
+      reportedStaff: staffLabel,
+      date: dateStr,
+    });
+    setDownloadedToken(token);
+    setTimeout(() => setDownloadedToken(''), 2500);
   };
 
   const handleLogout = () => {

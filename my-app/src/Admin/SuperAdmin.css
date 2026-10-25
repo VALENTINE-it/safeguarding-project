@@ -1104,6 +1104,27 @@
   color: #f8fafc;
 }
 
+.token-pdf-tag {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 3px;
+  margin-left: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  vertical-align: middle;
+}
+
+.super-admin-root.theme-light .token-pdf-tag {
+  background: #e2e8f0;
+  color: #0f766e;
+}
+
+.super-admin-root.theme-dark .token-pdf-tag {
+  background: #334155;
+  color: #2dd4bf;
+}
+
 .copied-bubble {
   position: absolute;
   top: -24px;

@@ -35,25 +35,54 @@ code {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  padding: 8px 18px;
-  border-radius: 9999px;
-  background: rgba(15, 118, 110, 0.12);
-  color: #0f766e;
-  font-size: 0.82rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  border: 1px solid rgba(15, 118, 110, 0.2);
+  padding: 6px 16px 6px 12px;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   z-index: 2;
   white-space: nowrap;
   max-width: 90vw;
   box-sizing: border-box;
 }
 
-.Header h1 {
-  margin: 0;
-  font-size: inherit;
-  letter-spacing: inherit;
-  font-weight: inherit;
+.brand-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #10b981;
+  box-shadow: 0 0 0 3px #d1fae5;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.brand-name {
+  font-size: 1.05rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  color: #0f172a;
+  line-height: 1;
+}
+
+.brand-accent {
+  color: #0f766e;
+}
+
+.brand-divider {
+  color: #cbd5e1;
+  font-weight: 300;
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.brand-tag {
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #0f766e;
+  line-height: 1;
 }
 
 .Body {
@@ -75,6 +104,29 @@ code {
   min-width: 0;
 }
 
+.hero-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #64748b;
+  letter-spacing: 0.02em;
+}
+
+.kicker-badge {
+  background: #e6f4f1;
+  color: #0f766e;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid #99f6e4;
+}
+
 .h1 {
   margin: 0;
   font-size: clamp(2rem, 5vw, 3rem);
@@ -82,6 +134,11 @@ code {
   font-weight: 900;
   letter-spacing: -0.05em;
   word-break: break-word;
+}
+
+.hero-brand {
+  color: #0f766e;
+  position: relative;
 }
 
 .Intro p {
@@ -97,10 +154,10 @@ code {
   flex: 0 1 420px;
   width: min(100%, 420px);
   background: #ffffff;
-  border: 1px solid rgba(15, 118, 110, 0.15);
-  border-radius: 28px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
   padding: clamp(22px, 4vw, 34px);
-  box-shadow: 0 30px 80px rgba(15, 118, 110, 0.08);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -125,7 +182,7 @@ code {
   align-items: flex-start;
   gap: 14px;
   padding: 16px 18px;
-  border-radius: 18px;
+  border-radius: 4px;
   border: 1px solid #e2e8f0;
   background: #f8fbff;
   margin-bottom: 12px;
@@ -172,12 +229,12 @@ code {
   background: #0f766e;
   color: #ffffff;
   border: none;
-  border-radius: 16px;
+  border-radius: 4px;
   cursor: pointer;
   font-size: 1rem;
   font-weight: 700;
   transition: background-color 180ms ease, transform 180ms ease;
-  box-shadow: 0 14px 26px rgba(15, 118, 110, 0.16);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   min-height: 48px;
   display: flex;
   align-items: center;
@@ -197,13 +254,13 @@ code {
   justify-content: center;
   text-align: center;
   padding: 7px 16px;
-  border-radius: 9999px;
-  background: rgba(15, 118, 110, 0.08);
+  border-radius: 4px;
+  background: #e6f4f1;
   color: #0f766e;
   font-size: 0.82rem;
   font-weight: 700;
   letter-spacing: 0.02em;
-  border: 1px solid rgba(15, 118, 110, 0.16);
+  border: 1px solid #99f6e4;
   width: fit-content;
   max-width: 100%;
   box-sizing: border-box;
@@ -225,12 +282,12 @@ code {
   justify-content: center;
   width: 100%;
   padding: 13px 18px;
-  border-radius: 14px;
+  border-radius: 4px;
   text-decoration: none;
   font-size: 0.92rem;
   font-weight: 700;
   transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
-  box-shadow: 0 8px 18px rgba(15, 118, 110, 0.08);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   text-align: center;
   min-height: 44px;
   box-sizing: border-box;
@@ -238,18 +295,26 @@ code {
 
 .portal-link:hover {
   transform: translateY(-1px);
-  box-shadow: 0 12px 24px rgba(15, 118, 110, 0.14);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
 .portal-link-primary {
-  background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+  background: #0f766e;
   color: #ffffff;
+}
+
+.portal-link-primary:hover {
+  background: #0d655c;
 }
 
 .portal-link-secondary {
   background: #ffffff;
   color: #0f172a;
   border: 1px solid #cbd5e1;
+}
+
+.portal-link-secondary:hover {
+  background: #f8fafc;
 }
 
 /* ==========================================================================
@@ -281,6 +346,10 @@ code {
     width: 100%;
   }
 
+  .hero-kicker {
+    justify-content: center;
+  }
+
   .Intro p {
     margin: 14px auto 0;
   }
@@ -304,9 +373,16 @@ code {
   }
 
   .Header {
-    font-size: 0.78rem;
-    padding: 6px 14px;
+    padding: 5px 12px;
     margin: 16px auto 0;
+  }
+
+  .brand-name {
+    font-size: 0.95rem;
+  }
+
+  .brand-tag {
+    font-size: 0.68rem;
   }
 
   .h1 {
@@ -321,7 +397,7 @@ code {
 
   .card {
     padding: 20px 16px;
-    border-radius: 20px;
+    border-radius: 6px;
     max-width: 100%;
   }
 
@@ -332,7 +408,7 @@ code {
   .option {
     gap: 12px;
     padding: 13px 14px;
-    border-radius: 14px;
+    border-radius: 4px;
     margin-bottom: 10px;
   }
 
@@ -347,7 +423,7 @@ code {
   .start-btn {
     padding: 13px 16px;
     font-size: 0.95rem;
-    border-radius: 12px;
+    border-radius: 4px;
     margin-top: 14px;
   }
 
@@ -355,6 +431,7 @@ code {
     margin: 14px auto 0;
     font-size: 0.8rem;
     padding: 6px 14px;
+    border-radius: 4px;
   }
 
   .secondary-link-row {
@@ -366,7 +443,7 @@ code {
   .portal-link {
     padding: 12px 16px;
     font-size: 0.88rem;
-    border-radius: 12px;
+    border-radius: 4px;
   }
 }
 

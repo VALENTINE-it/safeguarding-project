@@ -13,7 +13,6 @@ import MessageDetail from './MessageDetail';
 import AdminLogin from './Admin/A-login';
 import AdminReg from './Admin/A.reg.js';
 import StaffManager from './Admin/StaffManager';
-import { Link } from 'react-router-dom';
 
 function SafeGuardingApp() {
   const [showForm, setShowForm] = useState(false);
@@ -25,65 +24,65 @@ function SafeGuardingApp() {
   return (
     <>
       <div className="Header">
-        <h1>SAFEGUARDING</h1>
+        <span className="brand-status-dot" aria-hidden="true" />
+        <span className="brand-name">linda<span className="brand-accent">.</span></span>
+        <span className="brand-divider" aria-hidden="true">/</span>
+        <span className="brand-tag">confidential</span>
       </div>
 
       <div className="Body">
         <div className="Intro">
-          <h1 className="h1">Secure Communication, Complete Privacy</h1>
-<p>A safe and private space to share your concerns. Your identity is protected, and your voice matters.</p> 
-</div>
+          <div className="hero-kicker">
+            <span className="kicker-badge">Encrypted</span>
+            <span>Zero-trace reporting</span>
+          </div>
+          <h1 className="h1">
+            Speak freely.<br />
+            <span className="hero-brand">Linda</span> has your back.
+          </h1>
+          <p>A safe, private space to share your concerns with complete confidentiality. Your identity is protected, and your voice matters.</p> 
+        </div>
 
         {showForm ? (
          <FormComponent onBack={() => setShowForm(false)} />
         ) : (
-          <div>
-            <div className="card">
-              <h3>Start Here</h3>
-              <p>Choose how you’d like to continue.</p>
+          <div className="card">
+            <h3>Start Here</h3>
+            <p>Choose how you’d like to continue.</p>
 
-              <label className="option">
-                <input
-                  type="radio"
-                  name="path"
-                  value="new"
-                  checked={selectedPath === 'new'}
-                  onChange={() => setSelectedPath('new')}
-                />
-                <div>
-                  <div className="option-title">Send a New Message</div>
-                  <div className="option-desc">Start a private and secure conversation.</div>
-                </div>
-              </label>
+            <label className="option">
+              <input
+                type="radio"
+                name="path"
+                value="new"
+                checked={selectedPath === 'new'}
+                onChange={() => setSelectedPath('new')}
+              />
+              <div>
+                <div className="option-title">Send a New Message</div>
+                <div className="option-desc">Start a private and secure conversation.</div>
+              </div>
+            </label>
 
-              <label className="option">
-                <input
-                  type="radio"
-                  name="path"
-                  value="follow"
-                  checked={selectedPath === 'follow'}
-                  onChange={() => setSelectedPath('follow')}
-                />
-                <div>
-                  <div className="option-title">Follow Up on a Message</div>
-                  <div className="option-desc">Check updates using your reference code.</div>
-                </div>
-              </label>
+            <label className="option">
+              <input
+                type="radio"
+                name="path"
+                value="follow"
+                checked={selectedPath === 'follow'}
+                onChange={() => setSelectedPath('follow')}
+              />
+              <div>
+                <div className="option-title">Follow Up on a Message</div>
+                <div className="option-desc">Check updates using your reference code.</div>
+              </div>
+            </label>
 
-              <button type="button" onClick={() => setShowForm(true)} className="start-btn">
-                Continue
-              </button>
+            <button type="button" onClick={() => setShowForm(true)} className="start-btn">
+              Continue
+            </button>
 
-              <div className="badge">Anonymous Messaging</div>
-            </div>
-            <div className="secondary-link-row">
-              <Link to="/admin/super" className="portal-link portal-link-primary">
-                Super Admin Portal
-              </Link>
-              <Link to="/admin/login" className="portal-link portal-link-secondary">
-                Admin Login
-              </Link>
-            </div>
+            <div className="badge">Anonymous Messaging</div>
           </div>
         )}
       </div>

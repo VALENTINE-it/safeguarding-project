@@ -89,6 +89,21 @@ function AdminReg() {
             return;
         }
 
+        if (password.length < 6) {
+            setError('Password must not be less than 6 characters.');
+            return;
+        }
+
+        const hasUpper = /[A-Z]/.test(password);
+        const hasLower = /[a-z]/.test(password);
+        const hasNumber = /[0-9]/.test(password);
+        const hasSpecial = /[^A-Za-z0-9]/.test(password);
+
+        if (!hasUpper || !hasLower || !hasNumber || !hasSpecial) {
+            setError('Password must contain a mixture of uppercase and lowercase characters, numbers, and special characters.');
+            return;
+        }
+
         try {
             const response = await fetch(`${API_URL}/api/auth/register`, {
                 method: 'POST',
@@ -182,6 +197,9 @@ function AdminReg() {
                                 )}
                             </button>
                         </div>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '4px', display: 'block' }}>
+                            Must be at least 6 characters with uppercase, lowercase, numbers, and special characters.
+                        </span>
                     </label>
 
                     <label className="auth-field">

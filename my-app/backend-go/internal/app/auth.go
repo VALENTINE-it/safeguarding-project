@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/golang-jwt/jwt/v5"
@@ -121,8 +122,8 @@ func authRoutes(store *Store) http.Handler {
 			writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Username, email, and password are required"})
 			return
 		}
-		if len(password) < 8 {
-			writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Password must be at least 8 characters long"})
+		if err := validatePassword(password); err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]any{"error": err.Error()})
 			return
 		}
 
@@ -534,8 +535,8 @@ func superAuthRoutes(store *Store) http.Handler {
 			writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Username, email, and password are required"})
 			return
 		}
-		if len(payload.Password) < 8 {
-			writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Password must be at least 8 characters long"})
+		if err := validatePassword(payload.Password); err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]any{"error": err.Error()})
 			return
 		}
 
@@ -749,6 +750,29 @@ func hashPassword(password, salt string) string {
 
 func checkPassword(candidate, salt, stored string) bool {
 	return hashPassword(candidate, salt) == stored
+}
+
+func validatePassword(password string) error {
+	if len(password) < 6 {
+		return errors.New("Password must not be less than 6 characters")
+	}
+	var hasUpper, hasLower, hasNumber, hasSpecial bool
+	for _, ch := range password {
+		switch {
+		case unicode.IsUpper(ch):
+			hasUpper = true
+		case unicode.IsLower(ch):
+			hasLower = true
+		case unicode.IsDigit(ch):
+			hasNumber = true
+		default:
+			hasSpecial = true
+		}
+	}
+	if !hasUpper || !hasLower || !hasNumber || !hasSpecial {
+		return errors.New("Password must contain a mixture of uppercase and lowercase characters, numbers, and special characters")
+	}
+	return nil
 }
 
 func randomHex(n int) string {

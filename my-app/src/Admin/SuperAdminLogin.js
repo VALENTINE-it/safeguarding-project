@@ -83,6 +83,15 @@ function SuperAdminLogin() {
   return (
     <div className="auth-shell">
       <div className="auth-card">
+        <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '0.75rem' }}>
+          <Link to="/" className="auth-link" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            Back to Home
+          </Link>
+        </div>
         <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
         </div>
         <h1 className="auth-title">Super Admin Portal</h1>
@@ -160,6 +169,17 @@ function SuperAdminLogin() {
             <Link className="auth-link" to="/admin/login">
               Regular Admin Login
             </Link>
+          </div>
+
+          <div style={{ marginTop: '1rem', width: '100%' }}>
+            <button
+              type="button"
+              className="back-btn"
+              style={{ width: '100%', textDecoration: 'none' }}
+              onClick={() => navigate('/')}
+            >
+              ← Back to Home
+            </button>
           </div>
         </form>
       </div>

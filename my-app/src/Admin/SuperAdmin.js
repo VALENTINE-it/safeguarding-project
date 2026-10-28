@@ -28,6 +28,7 @@ function SuperAdmin() {
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('superAdminTheme') || 'light';
   });
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navigate = useNavigate();
 
@@ -380,6 +381,20 @@ function SuperAdmin() {
             <p className="super-page-desc">
               Overview of Linda reports, monthly trends, and administrator accounts.
             </p>
+            <div className="hero-stats" style={{ marginTop: '1.25rem' }}>
+              <div className="stat-card">
+                <span className="stat-value">{allMessages.length || messages.length}</span>
+                <span className="stat-label">Total Reports</span>
+              </div>
+              <div className="stat-card highlight-unread">
+                <span className="stat-value">{unreadMessages.length}</span>
+                <span className="stat-label">Unread</span>
+              </div>
+              <div className="stat-card highlight-read">
+                <span className="stat-value">{readMessages.length}</span>
+                <span className="stat-label">Reviewed</span>
+              </div>
+            </div>
           </div>
           <div className="super-account-summary">
             <span className="account-summary-text">

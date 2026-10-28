@@ -1185,6 +1185,10 @@
 
 @media (max-width: 640px) {
   .super-header {
+    padding: 14px 20px;
+  }
+
+  .super-hero-panel {
     flex-direction: column;
     align-items: stretch;
     gap: 10px;

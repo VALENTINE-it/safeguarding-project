@@ -84,6 +84,10 @@ code {
   word-break: break-word;
 }
 
+.hero-brand {
+  color: #0f766e;
+}
+
 .Intro p {
   margin-top: 24px;
   max-width: 520px;

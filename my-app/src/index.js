@@ -29,7 +29,10 @@ function SafeGuardingApp() {
 
       <div className="Body">
         <div className="Intro">
-          <h1 className="h1">Secure Communication, Complete Privacy</h1>
+          <h1 className="h1">
+            Speak freely.<br />
+            <span className="hero-brand">Linda</span> has your back.
+          </h1>
           <p>A safe and private space to share your concerns. Your identity is protected, and your voice matters.</p> 
         </div>
 

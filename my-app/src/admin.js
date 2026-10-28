@@ -168,7 +168,7 @@ function Admin() {
       <header className="admin-header-nav">
         <div className="admin-header-left">
           <div className="admin-brand">
-            <span className="brand-name">Safeguarding</span>
+            <span className="brand-name">Linda</span>
             <span className="brand-separator">/</span>
             <span className="brand-context">Admin</span>
           </div>
@@ -202,7 +202,7 @@ function Admin() {
         <div className="admin-page-header">
           <div className="admin-page-header-text">
             <h1 className="admin-page-title">Reports</h1>
-            <p className="admin-page-desc">View and manage safeguarding reports.</p>
+            <p className="admin-page-desc">View and manage Linda reports.</p>
           </div>
         </div>
 
@@ -297,7 +297,7 @@ function Admin() {
         {loading ? (
           <div className="admin-loading-box">
             <div className="admin-spinner" />
-            <span>Loading safeguarding messages…</span>
+            <span>Loading messages…</span>
           </div>
         ) : (
           <div className="admin-messages-grid">
@@ -320,7 +320,7 @@ function Admin() {
                 {unreadMessages.length === 0 ? (
                   <div className="admin-empty-state">
                     <span className="empty-title">No unread reports</span>
-                    <p className="empty-desc">All submitted safeguarding reports have been reviewed.</p>
+                    <p className="empty-desc">All submitted reports have been reviewed.</p>
                   </div>
                 ) : (
                   <div className="admin-msg-list">

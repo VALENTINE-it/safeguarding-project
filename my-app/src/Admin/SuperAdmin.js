@@ -327,7 +327,7 @@ function SuperAdmin() {
   ];
 
   const strokeColor = theme === 'light' ? '#0f766e' : '#2dd4bf';
-  const areaColor = theme === 'light' ? 'rgba(15, 118, 110, 0.08)' : 'rgba(45, 212, 191, 0.12)';
+  const areaColor = theme === 'light' ? '#f0fdfa' : '#132832';
   const gridColor = theme === 'light' ? '#e2e8f0' : '#334155';
   const labelColor = theme === 'light' ? '#64748b' : '#94a3b8';
 
@@ -337,7 +337,7 @@ function SuperAdmin() {
       <header className="super-header">
         <div className="super-header-left">
           <div className="super-brand">
-            <span className="brand-name">Safeguarding</span>
+            <span className="brand-name">Linda</span>
             <span className="brand-separator">/</span>
             <span className="brand-context">Super admin</span>
           </div>
@@ -378,7 +378,7 @@ function SuperAdmin() {
           <div className="super-page-header-text">
             <h1 className="super-page-title">Dashboard</h1>
             <p className="super-page-desc">
-              Overview of safeguarding reports, monthly trends, and administrator accounts.
+              Overview of Linda reports, monthly trends, and administrator accounts.
             </p>
           </div>
           <div className="super-account-summary">
@@ -418,7 +418,7 @@ function SuperAdmin() {
           <div className="super-section-header">
             <div>
               <h2 className="super-section-title">Reports over time</h2>
-              <p className="super-section-subtitle">Monthly breakdown of submitted safeguarding reports</p>
+              <p className="super-section-subtitle">Monthly breakdown of submitted reports</p>
             </div>
 
             <div className="super-filter-control">
@@ -577,7 +577,7 @@ function SuperAdmin() {
             <div>
               <h2 className="super-section-title">Reports management</h2>
               <p className="super-section-subtitle">
-                Review, filter, and process incoming safeguarding reports
+                Review, filter, and process incoming reports
               </p>
             </div>
           </div>

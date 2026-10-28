@@ -42,7 +42,7 @@ function AdminReg() {
         <div className="auth-shell">
             <div className="auth-card">
                 <h1 className="auth-title">Admin Registration</h1>
-                <p className="auth-copy">Create a secure administrator account to manage safeguarding operations.</p>
+                <p className="auth-copy">Create a secure administrator account to manage Linda operations.</p>
 
                 <form className="auth-form" onSubmit={handleSubmit}>
                     <label className="auth-field">

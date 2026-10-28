@@ -27,7 +27,7 @@ export function generateTokenPdf({ token, topic, date, reportedStaff }) {
   content.push('/F1 18 Tf');
   content.push('0.06 0.09 0.16 rg');
   content.push('50 748 Td');
-  content.push('(SAFEGUARDING CONFIDENTIAL REPORTING) Tj');
+  content.push('(LINDA CONFIDENTIAL REPORTING) Tj');
   content.push('ET');
 
   content.push('BT');
@@ -131,7 +131,7 @@ export function generateTokenPdf({ token, topic, date, reportedStaff }) {
   y -= 26;
 
   const instructions = [
-    '1. Open the Safeguarding portal in your web browser.',
+    '1. Open the Linda portal in your web browser.',
     '2. On the home page, select "Follow Up on a Message".',
     '3. Enter or paste your Secure Thread Token exactly as shown above.',
     '4. You can read administrator responses and submit additional confidential details.'
@@ -151,7 +151,7 @@ export function generateTokenPdf({ token, topic, date, reportedStaff }) {
   content.push('/F1 8 Tf');
   content.push('0.5 0.55 0.6 rg');
   content.push('50 65 Td');
-  content.push('(Safeguarding System - Confidential - This document contains private cryptographic access data.) Tj');
+  content.push('(Linda System - Confidential - This document contains private cryptographic access data.) Tj');
   content.push('ET');
 
   const streamContent = content.join('\n');
@@ -202,7 +202,7 @@ export function downloadTokenPdf({ token, topic, date, reportedStaff }) {
     const link = document.createElement('a');
     link.href = url;
     const safeToken = (token || 'token').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 12) || 'token';
-    link.download = `safeguarding-token-${safeToken}.pdf`;
+    link.download = `linda-token-${safeToken}.pdf`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

@@ -199,7 +199,7 @@
 }
 
 .super-admin-root.theme-dark .super-btn-outline:hover {
-  background-color: rgba(239, 68, 68, 0.12);
+  background-color: #271418;
   color: #f87171;
   border-color: #f87171;
 }
@@ -508,7 +508,7 @@
 .tooltip-title {
   font-weight: 600;
   margin-bottom: 2px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  border-bottom: 1px solid #334155;
   padding-bottom: 2px;
 }
 
@@ -684,7 +684,7 @@
 }
 
 .super-admin-root.theme-dark .btn-table-action:hover:not(:disabled) {
-  background-color: rgba(239, 68, 68, 0.12);
+  background-color: #271418;
   border-color: #f87171;
   color: #fca5a5;
 }

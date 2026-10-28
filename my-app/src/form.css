@@ -28,12 +28,12 @@ body {
   color: #0f766e;
   padding: 12px 16px;
   text-align: center;
-  border-radius: 12px;
+  border-radius: 4px;
   font-size: clamp(0.75rem, 2.2vw, 0.9rem);
   font-weight: 700;
   letter-spacing: 0.04em;
   margin-bottom: 20px;
-  border: 1px solid rgba(15, 118, 110, 0.2);
+  border: 1px solid #99f6e4;
   word-break: break-word;
   line-height: 1.4;
 }
@@ -41,9 +41,9 @@ body {
 .form-card {
   background: #ffffff;
   padding: clamp(20px, 4vw, 32px);
-  border-radius: 20px;
-  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
-  border: 1px solid rgba(15, 118, 110, 0.12);
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e2e8f0;
   box-sizing: border-box;
   width: 100%;
 }
@@ -84,7 +84,7 @@ input, textarea, select {
   padding: 12px 14px;
   margin-top: 4px;
   border: 1px solid #cbd5e1;
-  border-radius: 10px;
+  border-radius: 4px;
   font-size: 1rem;
   font-family: inherit;
   background: #ffffff;
@@ -96,7 +96,7 @@ input, textarea, select {
 input:focus, textarea:focus, select:focus {
   outline: none;
   border-color: #0f766e;
-  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15);
+  box-shadow: 0 0 0 3px #ccfbf1;
 }
 
 textarea {
@@ -114,8 +114,8 @@ textarea {
 /* Token Box & Copy Controls */
 .token-box {
   background: #f0fdfa;
-  border: 1px solid rgba(15, 118, 110, 0.25);
-  border-radius: 14px;
+  border: 1px solid #99f6e4;
+  border-radius: 4px;
   padding: 18px;
   margin: 20px 0;
   display: flex;
@@ -137,7 +137,7 @@ textarea {
   gap: 10px;
   background: #ffffff;
   border: 1px solid #cbd5e1;
-  border-radius: 10px;
+  border-radius: 4px;
   padding: 8px 12px;
   flex-wrap: wrap;
   min-width: 0;
@@ -159,7 +159,7 @@ textarea {
   color: #ffffff;
   border: none;
   padding: 8px 16px;
-  border-radius: 8px;
+  border-radius: 4px;
   cursor: pointer;
   font-size: 0.88rem;
   font-weight: 700;
@@ -181,7 +181,7 @@ textarea {
   color: #ffffff;
   border: none;
   padding: 8px 16px;
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
   font-size: 0.86rem;
   font-weight: 600;
@@ -214,7 +214,7 @@ textarea {
   color: #b91c1c;
   border: 1px solid #fecaca;
   padding: 12px 16px;
-  border-radius: 10px;
+  border-radius: 4px;
   font-size: 0.9rem;
   font-weight: 600;
   margin: 14px 0;
@@ -238,7 +238,7 @@ textarea {
   color: #334155;
   cursor: pointer;
   padding: 12px 20px;
-  border-radius: 12px;
+  border-radius: 4px;
   font-size: 0.95rem;
   font-weight: 700;
   flex: 1 1 140px;
@@ -260,7 +260,7 @@ textarea {
   color: #ffffff;
   border: none;
   padding: 12px 20px;
-  border-radius: 12px;
+  border-radius: 4px;
   cursor: pointer;
   font-size: 0.95rem;
   font-weight: 700;
@@ -268,7 +268,7 @@ textarea {
   text-align: center;
   transition: all 0.2s ease;
   min-height: 46px;
-  box-shadow: 0 10px 20px rgba(15, 118, 110, 0.16);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -297,7 +297,7 @@ textarea {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   padding: 16px;
-  border-radius: 14px;
+  border-radius: 4px;
   flex: 1 1 220px;
   min-width: 0;
   word-break: break-word;
@@ -326,7 +326,7 @@ textarea {
   align-items: center;
   justify-content: center;
   padding: 32px 16px;
-  background: linear-gradient(135deg, #f5f7f6 0%, #e6f4f1 100%);
+  background: #f5f7f6;
   box-sizing: border-box;
   width: 100%;
 }
@@ -334,11 +334,11 @@ textarea {
 .auth-card {
   width: 100%;
   max-width: 680px;
-  background: linear-gradient(135deg, #ffffff 0%, #f8fffe 100%);
-  border: 1px solid rgba(15, 118, 110, 0.14);
-  border-radius: 24px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
   padding: clamp(20px, 4.5vw, 42px);
-  box-shadow: 0 22px 50px rgba(15, 23, 42, 0.1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
   box-sizing: border-box;
   margin: 0 auto;
 }
@@ -387,7 +387,7 @@ textarea {
   width: 100%;
   padding: 12px 14px;
   border: 1px solid #dbe4e0;
-  border-radius: 10px;
+  border-radius: 4px;
   font-size: 1rem;
   background: #ffffff;
   color: #0f172a;
@@ -397,20 +397,20 @@ textarea {
 .auth-input:focus {
   outline: none;
   border-color: #0f766e;
-  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+  box-shadow: 0 0 0 3px #ccfbf1;
 }
 
 .auth-button {
   padding: 12px 20px;
   border: none;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+  border-radius: 4px;
+  background: #0f766e;
   color: #ffffff;
   cursor: pointer;
   font-weight: 700;
   font-size: 0.95rem;
-  box-shadow: 0 10px 24px rgba(15, 118, 110, 0.16);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease, background-color 0.2s ease;
   min-height: 46px;
   display: inline-flex;
   align-items: center;
@@ -422,9 +422,8 @@ textarea {
 }
 
 .auth-button:hover {
-  filter: brightness(1.03);
+  background: #0d655c;
   transform: translateY(-1px);
-  box-shadow: 0 14px 28px rgba(15, 118, 110, 0.2);
 }
 
 .auth-button:disabled {
@@ -490,7 +489,7 @@ textarea {
   background: #ffffff;
   color: #374151;
   border: 1px solid #d1d5db;
-  border-radius: 12px;
+  border-radius: 4px;
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
@@ -578,7 +577,7 @@ textarea {
   padding: 12px 14px;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border-radius: 4px;
   gap: 12px;
   flex-wrap: wrap;
   min-width: 0;
@@ -606,7 +605,7 @@ textarea {
   color: #b3261e;
   border: none;
   padding: 8px 14px;
-  border-radius: 8px;
+  border-radius: 4px;
   cursor: pointer;
   font-size: 0.85rem;
   font-weight: 700;
@@ -636,10 +635,10 @@ textarea {
   flex-direction: column;
   gap: 18px;
   background: #ffffff;
-  border: 1px solid rgba(15, 118, 110, 0.15);
-  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
   padding: clamp(18px, 4vw, 32px);
-  box-shadow: 0 14px 35px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
   box-sizing: border-box;
   width: 100%;
 }
@@ -650,7 +649,7 @@ textarea {
   gap: 16px;
   align-items: start;
   padding: 12px 0;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .detail-row:last-of-type {
@@ -1531,7 +1530,7 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
+  border-radius: 4px;
   transition: color 0.2s ease, background-color 0.2s ease;
   z-index: 2;
   min-height: 32px;
@@ -1540,7 +1539,7 @@ textarea {
 
 .password-toggle-btn:hover {
   color: #0f766e;
-  background-color: rgba(15, 118, 110, 0.1);
+  background-color: #e6f4f1;
 }
 
 /* ==========================================================================
@@ -1671,7 +1670,7 @@ textarea {
 
   .form-card {
     padding: 18px 14px;
-    border-radius: 16px;
+    border-radius: 6px;
   }
 
   .auth-shell {
@@ -1680,7 +1679,7 @@ textarea {
 
   .auth-card {
     padding: 20px 16px;
-    border-radius: 18px;
+    border-radius: 6px;
   }
 
   .detail-row {

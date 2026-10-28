@@ -24,23 +24,13 @@ function SafeGuardingApp() {
   return (
     <>
       <div className="Header">
-        <span className="brand-status-dot" aria-hidden="true" />
-        <span className="brand-name">linda<span className="brand-accent">.</span></span>
-        <span className="brand-divider" aria-hidden="true">/</span>
-        <span className="brand-tag">confidential</span>
+        <h1>LINDA</h1>
       </div>
 
       <div className="Body">
         <div className="Intro">
-          <div className="hero-kicker">
-            <span className="kicker-badge">Encrypted</span>
-            <span>Zero-trace reporting</span>
-          </div>
-          <h1 className="h1">
-            Speak freely.<br />
-            <span className="hero-brand">Linda</span> has your back.
-          </h1>
-          <p>A safe, private space to share your concerns with complete confidentiality. Your identity is protected, and your voice matters.</p> 
+          <h1 className="h1">Secure Communication, Complete Privacy</h1>
+          <p>A safe and private space to share your concerns. Your identity is protected, and your voice matters.</p> 
         </div>
 
         {showForm ? (

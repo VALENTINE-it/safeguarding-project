@@ -35,54 +35,25 @@ code {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  padding: 6px 16px 6px 12px;
+  padding: 8px 18px;
   border-radius: 4px;
-  background: #ffffff;
-  color: #0f172a;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  background: #e6f4f1;
+  color: #0f766e;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  border: 1px solid #99f6e4;
   z-index: 2;
   white-space: nowrap;
   max-width: 90vw;
   box-sizing: border-box;
 }
 
-.brand-status-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background-color: #10b981;
-  box-shadow: 0 0 0 3px #d1fae5;
-  display: inline-block;
-  flex-shrink: 0;
-}
-
-.brand-name {
-  font-size: 1.05rem;
-  font-weight: 900;
-  letter-spacing: -0.03em;
-  color: #0f172a;
-  line-height: 1;
-}
-
-.brand-accent {
-  color: #0f766e;
-}
-
-.brand-divider {
-  color: #cbd5e1;
-  font-weight: 300;
-  font-size: 0.85rem;
-  line-height: 1;
-}
-
-.brand-tag {
-  font-size: 0.74rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #0f766e;
-  line-height: 1;
+.Header h1 {
+  margin: 0;
+  font-size: inherit;
+  letter-spacing: inherit;
+  font-weight: inherit;
 }
 
 .Body {
@@ -104,29 +75,6 @@ code {
   min-width: 0;
 }
 
-.hero-kicker {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: #64748b;
-  letter-spacing: 0.02em;
-}
-
-.kicker-badge {
-  background: #e6f4f1;
-  color: #0f766e;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  border: 1px solid #99f6e4;
-}
-
 .h1 {
   margin: 0;
   font-size: clamp(2rem, 5vw, 3rem);
@@ -134,11 +82,6 @@ code {
   font-weight: 900;
   letter-spacing: -0.05em;
   word-break: break-word;
-}
-
-.hero-brand {
-  color: #0f766e;
-  position: relative;
 }
 
 .Intro p {
@@ -346,10 +289,6 @@ code {
     width: 100%;
   }
 
-  .hero-kicker {
-    justify-content: center;
-  }
-
   .Intro p {
     margin: 14px auto 0;
   }
@@ -357,12 +296,6 @@ code {
   .card {
     width: 100%;
     max-width: 440px;
-  }
-
-  .secondary-link-row {
-    max-width: 440px;
-    margin-left: auto;
-    margin-right: auto;
   }
 }
 
@@ -373,16 +306,9 @@ code {
   }
 
   .Header {
-    padding: 5px 12px;
+    font-size: 0.78rem;
+    padding: 6px 14px;
     margin: 16px auto 0;
-  }
-
-  .brand-name {
-    font-size: 0.95rem;
-  }
-
-  .brand-tag {
-    font-size: 0.68rem;
   }
 
   .h1 {

@@ -132,10 +132,10 @@ function AdminReg() {
         <div className="auth-shell">
             <div className="auth-card">
                 <h1 className="auth-title">Admin Registration</h1>
-                <p className="auth-copy">Create a secure administrator account to manage safeguarding operations.</p>
+                <p className="auth-copy">Create a secure administrator account to manage Linda operations.</p>
 
                 {limitReached && (
-                    <div className="registration-limit-warning" style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #f87171', padding: '14px 18px', borderRadius: '12px', marginBottom: '1.25rem', color: '#ef4444' }}>
+                    <div className="registration-limit-warning" style={{ background: '#fef2f2', border: '1px solid #f87171', padding: '14px 18px', borderRadius: '4px', marginBottom: '1.25rem', color: '#ef4444' }}>
                         <strong style={{ display: 'block', fontSize: '1rem' }}>Registered Admin Limit Alert</strong>
                         <p style={{ margin: '4px 0 0', fontSize: '0.88rem' }}>Maximum limit of 3 administrator accounts reached ({adminCount}/3 registered). New registrations are closed.</p>
                     </div>

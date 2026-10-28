@@ -61,7 +61,7 @@ function Admin() {
         <div className="auth-shell">
             <div className="auth-card">
                 <h1 className="auth-title">Welcome back, {adminName}</h1>
-                <p className="auth-copy">New safeguarding messages appear here until they are reviewed.</p>
+                <p className="auth-copy">New Linda messages appear here until they are reviewed.</p>
 
                 <section className="message-section">
                     <h2 className="auth-subtitle">Unread Messages</h2>

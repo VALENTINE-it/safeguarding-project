@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import '../form.css';
 import './SuperAdmin.css';
+import { downloadTokenPdf } from '../tokenPdf';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
@@ -21,8 +22,8 @@ function SuperAdmin() {
   const [searchToken, setSearchToken] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'unread' | 'read'
-  const [copiedToken, setCopiedToken] = useState('');
-  
+  const [downloadedToken, setDownloadedToken] = useState('');
+
   // Light mode by default as specified in requirements
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('superAdminTheme') || 'light';
@@ -48,7 +49,7 @@ function SuperAdmin() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      // 1. Fetch all messages for monthly complaint graph and safeguarding reports
+      // 1. Fetch all messages for reports overview, chart & reports management
       const msgRes = await fetch(`${API_URL}/api/messages`);
       const msgData = await msgRes.json();
       if (msgData.success) {
@@ -109,12 +110,25 @@ function SuperAdmin() {
     fetchFilteredMessages('', '');
   };
 
-  const handleCopyToken = (token, e) => {
+  const handleDownloadToken = (message, e) => {
     e.preventDefault();
     e.stopPropagation();
-    navigator.clipboard.writeText(token);
-    setCopiedToken(token);
-    setTimeout(() => setCopiedToken(''), 2000);
+    const token = message.threadToken;
+    const staffLabel = message.reportedStaff
+      ? (typeof message.reportedStaff === 'object'
+          ? `${message.reportedStaff.name} (${message.reportedStaff.role})`
+          : message.reportedStaff)
+      : undefined;
+    const dateStr = new Date(message.createdAt || Date.now()).toLocaleString();
+
+    downloadTokenPdf({
+      token,
+      topic: message.topic,
+      reportedStaff: staffLabel,
+      date: dateStr,
+    });
+    setDownloadedToken(token);
+    setTimeout(() => setDownloadedToken(''), 2500);
   };
 
   const markAsRead = async (messageId) => {
@@ -231,7 +245,6 @@ function SuperAdmin() {
     const result = [];
     const now = new Date();
 
-    // Generate past N months
     for (let i = monthsCount - 1; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -250,13 +263,12 @@ function SuperAdmin() {
       });
     }
 
-    // Populate counts from allMessages so graph maintains full analytics
     const chartSource = allMessages.length > 0 ? allMessages : messages;
     chartSource.forEach((msg) => {
       if (!msg.createdAt) return;
       const msgDate = new Date(msg.createdAt);
       const msgKey = `${msgDate.getFullYear()}-${String(msgDate.getMonth() + 1).padStart(2, '0')}`;
-      
+
       const found = result.find((item) => item.key === msgKey);
       if (found) {
         found.count += 1;
@@ -273,162 +285,101 @@ function SuperAdmin() {
 
   const monthlyData = getMonthlyData();
   const maxCount = Math.max(...monthlyData.map((m) => m.count), 5);
-  const totalComplaints = (allMessages.length > 0 ? allMessages : messages).length;
+  const totalReports = (allMessages.length > 0 ? allMessages : messages).length;
+  const avgReportsPerMonth = (totalReports / monthlyData.length).toFixed(1);
+  const peakMonth = monthlyData.reduce(
+    (prev, current) => (prev.count > current.count ? prev : current),
+    monthlyData[0] || { label: 'None', count: 0 }
+  );
+
   const unreadMessages = messages.filter((m) => !m.isRead);
   const readMessages = messages.filter((m) => m.isRead);
-  const avgComplaintsPerMonth = (totalComplaints / monthlyData.length).toFixed(1);
-  const peakMonth = monthlyData.reduce((prev, current) => (prev.count > current.count ? prev : current), monthlyData[0] || { label: 'N/A', count: 0 });
+  const unreadReportsCount = (allMessages.length > 0 ? allMessages : messages).filter((m) => !m.isRead).length;
+
+  // Practical chart dimensions: reduced height and clear margins
   const svgWidth = 840;
-  const svgHeight = 260;
-  const padLeft = 45;
-  const padRight = 35;
-  const padTop = 25;
-  const padBottom = 40;
+  const svgHeight = 170;
+  const padLeft = 40;
+  const padRight = 24;
+  const padTop = 16;
+  const padBottom = 32;
   const usableW = svgWidth - padLeft - padRight;
   const usableH = svgHeight - padTop - padBottom;
 
   const points = monthlyData.map((item, index) => {
     const x = padLeft + (monthlyData.length > 1 ? (index / (monthlyData.length - 1)) * usableW : usableW / 2);
     const y = padTop + usableH - (maxCount > 0 ? (item.count / maxCount) * usableH : 0);
-    const readY = padTop + usableH - (maxCount > 0 ? (item.read / maxCount) * usableH : 0);
-    return { x, y, readY, item, index };
+    return { x, y, item, index };
   });
 
-  const getLinePath = (pts, key = 'y') => {
-    if (!pts || pts.length === 0) return '';
-    if (pts.length === 1) return `M ${pts[0].x.toFixed(1)} ${pts[0][key].toFixed(1)}`;
+  // Use straight line segments so the chart never curves below zero when counts are 0
+  const straightLinePath = points.length > 0
+    ? points.reduce((acc, pt, i) => `${acc} ${i === 0 ? 'M' : 'L'} ${pt.x.toFixed(1)} ${pt.y.toFixed(1)}`, '')
+    : '';
 
-    let path = `M ${pts[0].x.toFixed(1)} ${pts[0][key].toFixed(1)}`;
-    for (let i = 0; i < pts.length - 1; i++) {
-      const curr = pts[i];
-      const next = pts[i + 1];
-      const prev = pts[i - 1] || curr;
-      const afterNext = pts[i + 2] || next;
-
-      const cp1x = curr.x + (next.x - prev.x) * 0.18;
-      const cp1y = curr[key] + (next[key] - prev[key]) * 0.18;
-      const cp2x = next.x - (afterNext.x - curr.x) * 0.18;
-      const cp2y = next[key] - (afterNext[key] - curr[key]) * 0.18;
-
-      path += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${next.x.toFixed(1)} ${next[key].toFixed(1)}`;
-    }
-    return path;
-  };
-
-  const linePath = getLinePath(points, 'y');
+  const areaPath = points.length > 0
+    ? `${straightLinePath} L ${points[points.length - 1].x.toFixed(1)} ${padTop + usableH} L ${points[0].x.toFixed(1)} ${padTop + usableH} Z`
+    : '';
 
   const yGridTicks = [
     { label: maxCount, y: padTop },
-    { label: Math.round(maxCount * 0.75), y: padTop + usableH * 0.25 },
     { label: Math.round(maxCount * 0.5), y: padTop + usableH * 0.5 },
-    { label: Math.round(maxCount * 0.25), y: padTop + usableH * 0.75 },
     { label: 0, y: padTop + usableH },
   ];
 
+  const strokeColor = theme === 'light' ? '#0f766e' : '#2dd4bf';
+  const areaColor = theme === 'light' ? '#f0fdfa' : '#132832';
+  const gridColor = theme === 'light' ? '#e2e8f0' : '#334155';
+  const labelColor = theme === 'light' ? '#64748b' : '#94a3b8';
+
   return (
     <div className={`super-admin-root theme-${theme}`}>
-      {/* Super Admin Top Header */}
+      {/* Quiet, professional navigation header */}
       <header className="super-header">
-        <div className="super-header-top">
-          <div className="super-header-left">
-            <span className="super-badge">SUPER ADMIN PORTAL</span>
-            <div className="super-user-info">
-              <span className="super-avatar">S</span>
-              <span className="super-name">{superAdminName}</span>
-            </div>
+        <div className="super-header-left">
+          <div className="super-brand">
+            <span className="brand-name">Linda</span>
+            <span className="brand-separator">/</span>
+            <span className="brand-context">Super admin</span>
           </div>
-
-          <div className="super-mobile-actions">
-            {/* Quick Logout with Power Icon on mobile */}
-            <button
-              type="button"
-              className="super-logout-btn mobile-logout-btn"
-              onClick={handleLogout}
-              title="Logout"
-              aria-label="Logout"
-            >
-              <svg className="power-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
-                <line x1="12" y1="2" x2="12" y2="12" />
-              </svg>
-            </button>
-
-            {/* Hamburger button visible only on mobile phone width */}
-            <button
-              type="button"
-              className={`super-hamburger-btn ${mobileMenuOpen ? 'open' : ''}`}
-              onClick={() => setMobileMenuOpen((prev) => !prev)}
-              aria-label="Toggle Navigation Menu"
-              aria-expanded={mobileMenuOpen}
-              title="Menu"
-            >
-              {mobileMenuOpen ? (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              ) : (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="3" y1="12" x2="21" y2="12" />
-                  <line x1="3" y1="6" x2="21" y2="6" />
-                  <line x1="3" y1="18" x2="21" y2="18" />
-                </svg>
-              )}
-            </button>
-          </div>
+          <span className="nav-user" title={`Signed in as ${superAdminName}`}>
+            {superAdminName}
+          </span>
         </div>
 
-        {/* Navigation Items (Visible on Desktop / Laptop, and in dropdown on mobile when hamburger is open) */}
-        <div className={`super-header-right ${mobileMenuOpen ? 'mobile-menu-open' : ''}`}>
-          {/* Theme Toggle Button (Light mode default) */}
+        <nav className="super-header-right" aria-label="Super admin navigation">
           <button
             type="button"
-            className="theme-toggle-btn"
-            onClick={() => {
-              toggleTheme();
-              setMobileMenuOpen(false);
-            }}
+            className="super-btn super-btn-secondary"
+            onClick={toggleTheme}
           >
-            {theme === 'light' ? 'Dark Mode' : 'Light Mode (Default)'}
+            {theme === 'light' ? 'Dark mode' : 'Light mode'}
           </button>
 
-          <Link
-            to="/admin/staff"
-            className="super-nav-btn staff-btn"
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            Staff Management
+          <Link to="/admin/staff" className="super-btn super-btn-secondary">
+            Staff management
           </Link>
-          <Link
-            to="/admin/register"
-            className="super-nav-btn reg-btn"
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            Register Admin
+          <Link to="/admin/register" className="super-btn super-btn-primary">
+            Register admin
           </Link>
           <button
             type="button"
-            className="super-logout-btn desktop-logout-btn"
+            className="super-btn super-btn-outline"
             onClick={handleLogout}
-            title="Logout"
           >
-            <svg className="power-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
-              <line x1="12" y1="2" x2="12" y2="12" />
-            </svg>
-            <span className="logout-text">Logout</span>
+            Log out
           </button>
-        </div>
+        </nav>
       </header>
 
-      {/* Main Container */}
+      {/* Main layout container */}
       <main className="super-container">
-        {/* Hero Control Panel Header */}
-        <div className="super-hero-panel">
-          <div>
-            <h1 className="super-hero-title">Executive Dashboard</h1>
-            <p className="super-hero-desc">
-              Comprehensive overview of safeguarding complaints, incoming reports, staff management, and admin accounts.
+        {/* Simple page header without oversized container */}
+        <div className="super-page-header">
+          <div className="super-page-header-text">
+            <h1 className="super-page-title">Dashboard</h1>
+            <p className="super-page-desc">
+              Overview of Linda reports, monthly trends, and administrator accounts.
             </p>
             <div className="hero-stats" style={{ marginTop: '1.25rem' }}>
               <div className="stat-card">
@@ -445,132 +396,122 @@ function SuperAdmin() {
               </div>
             </div>
           </div>
-
-          <div className="super-account-pill">
-            <div className="account-pill-title">ADMINISTRATOR ACCOUNTS</div>
-            <div className="account-pill-meta">
-              <span className="account-count">{adminCount} / 3</span>
-              <span className={`account-status-badge ${limitReached || adminCount >= 3 ? 'full' : 'available'}`}>
-                {limitReached || adminCount >= 3 ? 'FULL (3 MAX)' : `${3 - adminCount} SLOT AVAILABLE`}
-              </span>
-            </div>
-            <div className="account-progress-bar">
-              <div
-                className="account-progress-fill"
-                style={{ width: `${Math.min((adminCount / 3) * 100, 100)}%` }}
-              />
-            </div>
+          <div className="super-account-summary">
+            <span className="account-summary-text">
+              {adminCount} of 3 administrator accounts in use
+            </span>
+            {limitReached && (
+              <span className="account-limit-note">(limit reached)</span>
+            )}
           </div>
         </div>
 
-        {/* Minimalist Realistic Line Graph Section */}
-        <div className="graph-card">
-          <div className="graph-header">
+        {/* Compact statistics row with left-aligned labels and values */}
+        <div className="super-stats-row">
+          <div className="super-stat-card">
+            <span className="super-stat-label">Total reports</span>
+            <span className="super-stat-value">{totalReports}</span>
+          </div>
+          <div className="super-stat-card">
+            <span className="super-stat-label">Monthly average</span>
+            <span className="super-stat-value">{avgReportsPerMonth}</span>
+          </div>
+          <div className="super-stat-card">
+            <span className="super-stat-label">Peak month</span>
+            <span className="super-stat-value">
+              {peakMonth.count > 0 ? `${peakMonth.label} (${peakMonth.count})` : 'None'}
+            </span>
+          </div>
+          <div className="super-stat-card">
+            <span className="super-stat-label">Unread reports</span>
+            <span className="super-stat-value">{unreadReportsCount}</span>
+          </div>
+        </div>
+
+        {/* Practical Chart Section */}
+        <section className="super-section">
+          <div className="super-section-header">
             <div>
-              <h2 className="graph-title">Safeguarding Complaints Frequency</h2>
-              <p className="graph-subtitle">Monthly breakdown of submitted safeguarding reports</p>
+              <h2 className="super-section-title">Reports over time</h2>
+              <p className="super-section-subtitle">Monthly breakdown of submitted reports</p>
             </div>
 
-            <div className="graph-controls">
-              <span className="time-select-label">Timeframe:</span>
+            <div className="super-filter-control">
+              <label htmlFor="timeframe-select" className="super-filter-label">Timeframe</label>
               <select
-                className="time-select-dropdown"
+                id="timeframe-select"
+                className="super-select"
                 value={timeRange}
                 onChange={(e) => setTimeRange(e.target.value)}
               >
-                <option value="6months">Past 6 Months</option>
-                <option value="12months">Past 12 Months</option>
+                <option value="6months">Past 6 months</option>
+                <option value="12months">Past 12 months</option>
               </select>
             </div>
           </div>
 
-          {/* Stats Summary Bar */}
-          <div className="graph-stats-row">
-            <div className="stat-box">
-              <span className="stat-label">Total Reports</span>
-              <span className="stat-value neutral">{totalComplaints}</span>
-            </div>
-            <div className="stat-box">
-              <span className="stat-label">Monthly Average</span>
-              <span className="stat-value neutral">{avgComplaintsPerMonth}</span>
-            </div>
-            <div className="stat-box">
-              <span className="stat-label">Peak Month</span>
-              <span className="stat-value neutral">{peakMonth.label} ({peakMonth.count})</span>
-            </div>
-            <div className="stat-box">
-              <span className="stat-label">Unread Reports</span>
-              <span className="stat-value neutral">{messages.filter((m) => !m.isRead).length}</span>
-            </div>
-          </div>
-
-          {/* Clean Thin Line Graph Canvas */}
           {loading ? (
-            <div className="loading-graph-state">
+            <div className="super-loading-box">
               <div className="super-spinner" />
-              <span>Loading analytics data…</span>
+              <span>Loading report data…</span>
             </div>
           ) : (
-            <div className="clean-chart-wrapper">
+            <div className="super-chart-wrapper">
               <svg
                 viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-                className="clean-chart-svg"
+                className="super-chart-svg"
                 preserveAspectRatio="none"
               >
-                {/* Background Grid & Y-Axis Labels */}
+                {/* Horizontal Grid lines and Y labels */}
                 {yGridTicks.map((tick, i) => (
-                  <g key={i} className="clean-grid-group">
+                  <g key={i}>
                     <line
                       x1={padLeft}
                       y1={tick.y}
                       x2={svgWidth - padRight}
                       y2={tick.y}
-                      className="clean-grid-line"
+                      stroke={gridColor}
+                      strokeDasharray="2 3"
+                      strokeWidth="1"
                     />
                     <text
-                      x={padLeft - 10}
+                      x={padLeft - 8}
                       y={tick.y + 4}
                       textAnchor="end"
-                      className="clean-y-label"
+                      fill={labelColor}
+                      fontSize="11"
+                      fontFamily="inherit"
                     >
                       {tick.label}
                     </text>
                   </g>
                 ))}
 
-                {/* Thin Line Graph (1.5px Thin Monochrome Line) */}
-                {linePath && (
+                {/* Subtle Area fill under the straight line */}
+                {areaPath && (
                   <path
-                    d={linePath}
-                    fill="none"
-                    stroke={theme === 'light' ? '#334155' : '#cbd5e1'}
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="clean-main-line"
+                    d={areaPath}
+                    fill={areaColor}
                   />
                 )}
 
-                {/* Vertical Cursor Guideline */}
-                {points.map((pt) => {
-                  if (hoveredMonth !== pt.item.key) return null;
-                  return (
-                    <line
-                      key={`guide-${pt.item.key}`}
-                      x1={pt.x}
-                      y1={padTop}
-                      x2={pt.x}
-                      y2={padTop + usableH}
-                      className="clean-hover-guide"
-                    />
-                  );
-                })}
+                {/* Straight segment line (never curves below zero) */}
+                {straightLinePath && (
+                  <path
+                    d={straightLinePath}
+                    fill="none"
+                    stroke={strokeColor}
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                )}
 
-                {/* Data Points & X-Axis Month Labels */}
+                {/* Data points and X labels */}
                 {points.map((pt) => {
                   const isHovered = hoveredMonth === pt.item.key;
                   return (
-                    <g key={pt.item.key} className="clean-node-group">
+                    <g key={pt.item.key}>
                       {/* Hover touch target */}
                       <rect
                         x={pt.x - usableW / (monthlyData.length * 2)}
@@ -583,20 +524,25 @@ function SuperAdmin() {
                         style={{ cursor: 'pointer' }}
                       />
 
-                      {/* Small Thin Point Circle */}
+                      {/* Dot */}
                       <circle
                         cx={pt.x}
                         cy={pt.y}
                         r={isHovered ? 4.5 : 3}
-                        className={`clean-node-dot ${isHovered ? 'active' : ''}`}
+                        fill={isHovered ? strokeColor : (theme === 'light' ? '#ffffff' : '#0f172a')}
+                        stroke={strokeColor}
+                        strokeWidth="2"
                       />
 
-                      {/* X-Axis Month Label */}
+                      {/* X-axis label */}
                       <text
                         x={pt.x}
                         y={svgHeight - 10}
                         textAnchor="middle"
-                        className={`clean-x-label ${isHovered ? 'active' : ''}`}
+                        fill={isHovered ? (theme === 'light' ? '#0f172a' : '#f8fafc') : labelColor}
+                        fontSize="11"
+                        fontWeight={isHovered ? '600' : '400'}
+                        fontFamily="inherit"
                       >
                         {pt.item.label}
                       </text>
@@ -605,7 +551,7 @@ function SuperAdmin() {
                 })}
               </svg>
 
-              {/* Minimalist Floating Tooltip Card */}
+              {/* Discreet floating tooltip */}
               {hoveredMonth && (() => {
                 const activePt = points.find((p) => p.item.key === hoveredMonth);
                 if (!activePt) return null;
@@ -614,22 +560,22 @@ function SuperAdmin() {
 
                 return (
                   <div
-                    className="clean-tooltip-card"
+                    className="super-chart-tooltip"
                     style={{
                       left: `${Math.min(Math.max(leftPct, 12), 88)}%`,
-                      top: `${Math.max(topPct - 25, 5)}%`,
+                      top: `${Math.max(topPct - 30, 0)}%`,
                     }}
                   >
-                    <div className="clean-tooltip-title">{activePt.item.fullLabel}</div>
-                    <div className="clean-tooltip-row">
-                      <span>Total Reports:</span>
+                    <div className="tooltip-title">{activePt.item.fullLabel}</div>
+                    <div className="tooltip-row">
+                      <span>Total reports:</span>
                       <strong>{activePt.item.count}</strong>
                     </div>
-                    <div className="clean-tooltip-row">
-                      <span>Read:</span>
+                    <div className="tooltip-row">
+                      <span>Reviewed:</span>
                       <span>{activePt.item.read}</span>
                     </div>
-                    <div className="clean-tooltip-row">
+                    <div className="tooltip-row">
                       <span>Unread:</span>
                       <span>{activePt.item.unread}</span>
                     </div>
@@ -638,242 +584,257 @@ function SuperAdmin() {
               })()}
             </div>
           )}
-        </div>
+        </section>
 
         {/* Incorporated Regular Admin Safeguarding Reports Section */}
-        <div className="admins-table-card" style={{ marginBottom: '2rem' }}>
-          <div className="table-card-header" style={{ marginBottom: '1.25rem' }}>
+        <section className="super-section">
+          <div className="super-section-header">
             <div>
-              <h2 className="table-title">Safeguarding Reports Management</h2>
-              <p className="table-subtitle">
-                Review, filter, and process confidential safeguarding messages in real time.
+              <h2 className="super-section-title">Reports management</h2>
+              <p className="super-section-subtitle">
+                Review, filter, and process incoming reports
               </p>
             </div>
           </div>
 
-          {/* Filter & Search Bar */}
-          <div className="admin-controls-card" style={{ marginBottom: '1.5rem' }}>
-            <form className="admin-search-form" onSubmit={handleSearch}>
-              <div className="search-input-wrap">
-                <span className="search-icon">🔍</span>
+          {/* Search, Filter Date & Status Tabs */}
+          <div className="super-reports-controls">
+            <form className="super-search-form" onSubmit={handleSearch}>
+              <div className="super-search-field">
                 <input
                   type="text"
-                  className="admin-input"
-                  placeholder="Search by thread token..."
+                  className="super-input"
+                  placeholder="Search by thread token…"
                   value={searchToken}
                   onChange={(e) => setSearchToken(e.target.value)}
                 />
               </div>
-              <div className="date-input-wrap">
-                <label htmlFor="dateFilter">Filter date:</label>
+
+              <div className="super-date-field">
+                <label htmlFor="filter-date" className="super-field-label">Filter date:</label>
                 <input
-                  id="dateFilter"
+                  id="filter-date"
                   type="date"
-                  className="admin-input date-input"
+                  className="super-input super-date-input"
                   value={selectedDate}
                   onChange={handleDateChange}
                 />
               </div>
-              <button type="submit" className="admin-btn primary-btn">
+
+              <button type="submit" className="super-btn super-btn-primary">
                 Search
               </button>
               {(searchToken || selectedDate) && (
-                <button type="button" className="admin-btn ghost-btn" onClick={clearFilters}>
+                <button type="button" className="super-btn super-btn-secondary" onClick={clearFilters}>
                   Reset
                 </button>
               )}
             </form>
 
-            <div className="tab-controls">
+            <div className="super-tab-group" role="tablist" aria-label="Report filter tabs">
               <button
                 type="button"
-                className={`tab-btn ${activeTab === 'all' ? 'active' : ''}`}
+                role="tab"
+                aria-selected={activeTab === 'all'}
+                className={`super-tab-btn ${activeTab === 'all' ? 'active' : ''}`}
                 onClick={() => setActiveTab('all')}
               >
-                All Sections
+                All reports ({messages.length})
               </button>
               <button
                 type="button"
-                className={`tab-btn ${activeTab === 'unread' ? 'active' : ''}`}
+                role="tab"
+                aria-selected={activeTab === 'unread'}
+                className={`super-tab-btn ${activeTab === 'unread' ? 'active' : ''}`}
                 onClick={() => setActiveTab('unread')}
               >
                 Unread ({unreadMessages.length})
               </button>
               <button
                 type="button"
-                className={`tab-btn ${activeTab === 'read' ? 'active' : ''}`}
+                role="tab"
+                aria-selected={activeTab === 'read'}
+                className={`super-tab-btn ${activeTab === 'read' ? 'active' : ''}`}
                 onClick={() => setActiveTab('read')}
               >
-                Read ({readMessages.length})
+                Reviewed ({readMessages.length})
               </button>
             </div>
           </div>
 
-          {/* Messages Sections Grid */}
+          {/* Reports Content */}
           {messagesLoading ? (
-            <div className="loading-container">
-              <div className="spinner"></div>
-              <p>Loading safeguarding messages...</p>
+            <div className="super-loading-box">
+              <div className="super-spinner" />
+              <span>Loading messages…</span>
             </div>
           ) : (
-            <div className="sections-grid">
-              {/* UNREAD MESSAGES SECTION */}
+            <div className="super-messages-grid">
+              {/* Unread Reports List */}
               {(activeTab === 'all' || activeTab === 'unread') && (
-                <section className="messages-section-card unread-section">
-                  <div className="section-header">
-                    <div className="section-title-wrap">
-                      <span className="section-badge unread-badge-count">{unreadMessages.length}</span>
-                      <h2>📬 Unread Messages</h2>
-                    </div>
+                <div className="super-msg-section">
+                  <div className="super-msg-section-header">
+                    <span className="super-msg-section-title">
+                      Unread reports ({unreadMessages.length})
+                    </span>
                     {unreadMessages.length > 0 && (
-                      <button type="button" className="mark-all-btn" onClick={markAllAsRead}>
-                        ✓ Mark all as read
+                      <button type="button" className="super-btn super-btn-outline" onClick={markAllAsRead}>
+                        Mark all as read
                       </button>
                     )}
                   </div>
 
                   {unreadMessages.length === 0 ? (
-                    <div className="empty-state">
-                      <div className="empty-icon">🎉</div>
-                      <h3>All Caught Up!</h3>
-                      <p>There are no unread safeguarding reports to review.</p>
+                    <div className="super-msg-empty">
+                      <span>No unread reports to review.</span>
                     </div>
                   ) : (
-                    <div className="messages-list">
-                      {unreadMessages.map((message) => (
-                        <div key={message.id || message._id} className="msg-card unread-msg-card">
-                          <div className="msg-header">
-                            <div className="msg-topic-row">
-                              <span className="pulse-unread-dot" title="Unread Message"></span>
-                              <Link to={`/message/${message.id || message._id}`} className="msg-topic-link">
-                                {message.topic}
-                              </Link>
+                    <div className="super-msg-list">
+                      {unreadMessages.map((message) => {
+                        const msgId = message.id || message._id;
+                        return (
+                          <div key={msgId} className="super-msg-card unread">
+                            <div className="super-msg-header">
+                              <div className="super-msg-topic-row">
+                                <span className="unread-dot" title="Unread report" />
+                                <Link to={`/message/${msgId}`} className="super-msg-topic">
+                                  {message.topic}
+                                </Link>
+                              </div>
+                              {message.reportedStaff && (
+                                <span className="super-staff-tag">
+                                  Re: {message.reportedStaff.name} ({message.reportedStaff.role})
+                                </span>
+                              )}
                             </div>
-                            {message.reportedStaff && (
-                              <span className="staff-pill">
-                                Re: {message.reportedStaff.name} ({message.reportedStaff.role})
-                              </span>
-                            )}
+
+                            <p className="super-msg-body">{message.message}</p>
+
+                            <div className="super-msg-footer">
+                              <div className="super-msg-meta">
+                                <button
+                                  type="button"
+                                  className="super-token-pill"
+                                  onClick={(e) => handleDownloadToken(message, e)}
+                                  title="Click to download secure thread token PDF"
+                                >
+                                  {message.threadToken}
+                                  <span className="token-pdf-tag">PDF</span>
+                                  {downloadedToken === message.threadToken && (
+                                    <span className="copied-bubble">Downloaded PDF</span>
+                                  )}
+                                </button>
+                                <span className="super-date-text">
+                                  {new Date(message.createdAt || Date.now()).toLocaleString()}
+                                </span>
+                              </div>
+
+                              <div className="super-msg-actions">
+                                <Link to={`/message/${msgId}`} className="super-btn super-btn-secondary">
+                                  View details
+                                </Link>
+                                <button
+                                  type="button"
+                                  className="super-btn super-btn-outline"
+                                  onClick={() => markAsRead(msgId)}
+                                >
+                                  Mark as read
+                                </button>
+                              </div>
+                            </div>
                           </div>
-
-                          <p className="msg-body">{message.message}</p>
-
-                          <div className="msg-footer">
-                            <div className="msg-meta-row">
-                              <span
-                                className="token-tag"
-                                onClick={(e) => handleCopyToken(message.threadToken, e)}
-                                title="Click to copy thread token"
-                              >
-                                {message.threadToken}
-                                {copiedToken === message.threadToken && <span className="copy-pop">Copied!</span>}
-                              </span>
-                              <span className="date-tag">
-                                {new Date(message.createdAt || Date.now()).toLocaleString()}
-                              </span>
-                            </div>
-
-                            <div className="msg-actions">
-                              <Link to={`/message/${message.id || message._id}`} className="msg-btn view-btn">
-                                View Details
-                              </Link>
-                              <button
-                                type="button"
-                                className="msg-btn mark-read-btn"
-                                onClick={() => markAsRead(message.id || message._id)}
-                              >
-                                Mark as Read
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
-                </section>
+                </div>
               )}
 
-              {/* READ MESSAGES SECTION */}
+              {/* Reviewed Reports List */}
               {(activeTab === 'all' || activeTab === 'read') && (
-                <section className="messages-section-card read-section">
-                  <div className="section-header">
-                    <div className="section-title-wrap">
-                      <span className="section-badge read-badge-count">{readMessages.length}</span>
-                      <h2>Read Messages</h2>
-                    </div>
+                <div className="super-msg-section">
+                  <div className="super-msg-section-header">
+                    <span className="super-msg-section-title">
+                      Reviewed reports ({readMessages.length})
+                    </span>
                   </div>
 
                   {readMessages.length === 0 ? (
-                    <div className="empty-state">
-                      <div className="empty-icon"></div>
-                      <h3>No Reviewed Messages</h3>
-                      <p>Messages will move here after you review and mark them as read.</p>
+                    <div className="super-msg-empty">
+                      <span>No reviewed reports yet.</span>
                     </div>
                   ) : (
-                    <div className="messages-list">
-                      {readMessages.map((message) => (
-                        <div key={message.id || message._id} className="msg-card read-msg-card">
-                          <div className="msg-header">
-                            <div className="msg-topic-row">
-                              <span className="read-check-icon">✓</span>
-                              <Link to={`/message/${message.id || message._id}`} className="msg-topic-link">
-                                {message.topic}
-                              </Link>
+                    <div className="super-msg-list">
+                      {readMessages.map((message) => {
+                        const msgId = message.id || message._id;
+                        return (
+                          <div key={msgId} className="super-msg-card read">
+                            <div className="super-msg-header">
+                              <div className="super-msg-topic-row">
+                                <span className="read-check">✓</span>
+                                <Link to={`/message/${msgId}`} className="super-msg-topic">
+                                  {message.topic}
+                                </Link>
+                              </div>
+                              {message.reportedStaff && (
+                                <span className="super-staff-tag">
+                                  Re: {message.reportedStaff.name} ({message.reportedStaff.role})
+                                </span>
+                              )}
                             </div>
-                            {message.reportedStaff && (
-                              <span className="staff-pill">
-                                Re: {message.reportedStaff.name} ({message.reportedStaff.role})
-                              </span>
-                            )}
+
+                            <p className="super-msg-body">{message.message}</p>
+
+                            <div className="super-msg-footer">
+                              <div className="super-msg-meta">
+                                <button
+                                  type="button"
+                                  className="super-token-pill"
+                                  onClick={(e) => handleDownloadToken(message, e)}
+                                  title="Click to download secure thread token PDF"
+                                >
+                                  {message.threadToken}
+                                  <span className="token-pdf-tag">PDF</span>
+                                  {downloadedToken === message.threadToken && (
+                                    <span className="copied-bubble">Downloaded PDF</span>
+                                  )}
+                                </button>
+                                <span className="super-date-text">
+                                  {new Date(message.createdAt || Date.now()).toLocaleString()}
+                                </span>
+                              </div>
+
+                              <div className="super-msg-actions">
+                                <Link to={`/message/${msgId}`} className="super-btn super-btn-secondary">
+                                  View details
+                                </Link>
+                              </div>
+                            </div>
                           </div>
-
-                          <p className="msg-body">{message.message}</p>
-
-                          <div className="msg-footer">
-                            <div className="msg-meta-row">
-                              <span
-                                className="token-tag"
-                                onClick={(e) => handleCopyToken(message.threadToken, e)}
-                                title="Click to copy thread token"
-                              >
-                                {message.threadToken}
-                                {copiedToken === message.threadToken && <span className="copy-pop">Copied!</span>}
-                              </span>
-                              <span className="date-tag">
-                                {new Date(message.createdAt || Date.now()).toLocaleString()}
-                              </span>
-                            </div>
-
-                            <div className="msg-actions">
-                              <Link to={`/message/${message.id || message._id}`} className="msg-btn view-btn">
-                                View Details
-                              </Link>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
-                </section>
+                </div>
               )}
             </div>
           )}
-        </div>
+        </section>
 
-        {/* Registered Admin Accounts Table Section */}
-        <div className="admins-table-card">
-          <div className="table-card-header">
+        {/* Practical Accounts Table Section */}
+        <section className="super-section">
+          <div className="super-section-header">
             <div>
-              <h2 className="table-title">Registered Administrator Accounts</h2>
-              <p className="table-subtitle">
-                System access accounts (Maximum 3 administrator accounts allowed)
+              <h2 className="super-section-title">Administrator accounts</h2>
+              <p className="super-section-subtitle">
+                System access accounts (maximum 3 allowed)
               </p>
             </div>
 
-            <div className="table-card-actions">
+            <div>
               <Link
                 to="/admin/register"
-                className={`table-reg-btn ${limitReached || adminCount >= 3 ? 'disabled' : ''}`}
+                className={`super-btn ${limitReached || adminCount >= 3 ? 'super-btn-disabled' : 'super-btn-primary'}`}
                 onClick={(e) => {
                   if (limitReached || adminCount >= 3) {
                     e.preventDefault();
@@ -881,36 +842,36 @@ function SuperAdmin() {
                   }
                 }}
               >
-                Register New Admin
+                Register admin
               </Link>
             </div>
           </div>
 
-          <div className="table-responsive">
-            <table className="super-table">
+          <div className="super-table-container">
+            <table className="super-data-table">
               <thead>
                 <tr>
-                  <th>#</th>
-                  <th>Username</th>
-                  <th>Email</th>
-                  <th>Linked Staff Member</th>
-                  <th>Account Created</th>
-                  <th>Logins</th>
-                  <th>Status</th>
-                  <th>Actions</th>
+                  <th scope="col" style={{ width: '40px' }}>#</th>
+                  <th scope="col">Username</th>
+                  <th scope="col">Email</th>
+                  <th scope="col">Linked staff member</th>
+                  <th scope="col">Created</th>
+                  <th scope="col">Logins</th>
+                  <th scope="col">Status</th>
+                  <th scope="col" style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="8" className="empty-table-cell">
+                    <td colSpan="8" className="table-empty-cell">
                       Loading administrator accounts…
                     </td>
                   </tr>
                 ) : admins.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="empty-table-cell">
-                      No admin accounts registered yet. Click "Register New Admin" to create one.
+                    <td colSpan="8" className="table-empty-cell">
+                      No admin accounts registered yet.
                     </td>
                   </tr>
                 ) : (
@@ -918,37 +879,34 @@ function SuperAdmin() {
                     const adminId = adm.id || adm._id || '';
                     return (
                       <tr key={adminId || index}>
-                        <td>
-                          <span className="row-index">{index + 1}</span>
-                        </td>
-                        <td>
-                          <strong className="admin-username-cell">{adm.username}</strong>
-                        </td>
-                        <td className="admin-email-cell">{adm.email}</td>
-                        <td>
+                        <td className="cell-muted">{index + 1}</td>
+                        <td className="cell-username">{adm.username}</td>
+                        <td className="cell-email">{adm.email}</td>
+                        <td className="cell-muted">
                           {adm.staffId ? (
-                            <span className="staff-linked-tag">
-                              {typeof adm.staffId === 'object' ? `${adm.staffId.name || adm.username} ${adm.staffId.role ? `(${adm.staffId.role})` : ''}` : adm.staffId}
-                            </span>
+                            typeof adm.staffId === 'object'
+                              ? `${adm.staffId.name || adm.username} ${adm.staffId.role ? `(${adm.staffId.role})` : ''}`
+                              : adm.staffId
                           ) : (
-                            <span className="unlinked-tag">Not linked</span>
+                            'None'
                           )}
                         </td>
-                        <td>
-                          {adm.createdAt ? new Date(adm.createdAt).toLocaleDateString() : 'N/A'}
+                        <td className="cell-muted">
+                          {adm.createdAt ? new Date(adm.createdAt).toLocaleDateString() : '—'}
+                        </td>
+                        <td className="cell-muted">
+                          {(adm.loginHistory && adm.loginHistory.length) || 0}
                         </td>
                         <td>
-                          <span className="login-count-pill">
-                            {(adm.loginHistory && adm.loginHistory.length) || 0} logins
+                          <span className="status-indicator">
+                            <span className="status-dot" />
+                            Active
                           </span>
                         </td>
-                        <td>
-                          <span className="status-active-pill">Active</span>
-                        </td>
-                        <td>
+                        <td style={{ textAlign: 'right' }}>
                           <button
                             type="button"
-                            className="table-action-btn delete-admin-btn"
+                            className="btn-table-action"
                             onClick={() => deleteAdmin(adminId)}
                             disabled={loading || !adminId}
                           >
@@ -962,7 +920,7 @@ function SuperAdmin() {
               </tbody>
             </table>
           </div>
-        </div>
+        </section>
       </main>
     </div>
   );

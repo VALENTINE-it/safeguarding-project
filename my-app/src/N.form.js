@@ -1,23 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import './form.css';
+import { downloadTokenPdf } from './tokenPdf';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
-function CopyText({ text }) {
-  const [copied, setCopied] = useState(false);
+function DownloadToken({ token, topic, reportedStaff, date }) {
+  const [downloaded, setDownloaded] = useState(false);
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+  const handleDownload = () => {
+    downloadTokenPdf({ token, topic, reportedStaff, date });
+    setDownloaded(true);
+    setTimeout(() => setDownloaded(false), 2500);
   };
 
   return (
     <div className="copy-container">
-      <code>{text}</code>
-      <button onClick={handleCopy} className="copy-btn">
-        {copied ? 'Copied!' : 'Copy'}
+      <code>{token}</code>
+      <button type="button" onClick={handleDownload} className="download-pdf-btn">
+        {downloaded ? 'Downloaded PDF' : 'Download PDF'}
       </button>
     </div>
   );
@@ -83,6 +83,9 @@ function NewMessageForm({ onBack }) {
   };
 
   if (status === 'success') {
+    const staffObj = staffList.find((s) => (s.id || s._id) === reportedStaff);
+    const staffLabel = staffObj ? `${staffObj.name} (${staffObj.role})` : reportedStaff;
+
     return (
       <div className="form-container">
         <div className="security-banner">
@@ -92,15 +95,20 @@ function NewMessageForm({ onBack }) {
         <div className="form-card">
           <h2>Message Sent</h2>
           <p className="subtitle">
-            Your message has been delivered securely. Copy your token below —
+            Your message has been delivered securely. Download your token PDF below —
             it is the only way to follow up on this thread.
           </p>
 
           <div className="token-box">
             <strong>Your Secure Thread Token</strong>
-            <CopyText text={threadToken} />
+            <DownloadToken
+              token={threadToken}
+              topic={topic}
+              reportedStaff={staffLabel}
+              date={new Date().toLocaleString()}
+            />
             <p className="token-note">
-              Copy this token and keep it safe. It will not be shown again.
+              Download this PDF and keep it safe. It contains your token and instructions for following up.
             </p>
           </div>
 

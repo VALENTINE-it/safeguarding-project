@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import './form.css';
+import { downloadTokenPdf } from './tokenPdf';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
@@ -110,6 +111,29 @@ function MessageDetail() {
               <span className="detail-label">Status</span>
               <span>{message.isRead ? 'Read' : 'New message'}</span>
             </div>
+            {message.threadToken && (
+              <div className="detail-row">
+                <span className="detail-label">Thread token</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <code style={{ fontSize: '0.85rem', fontFamily: 'monospace' }}>{message.threadToken}</code>
+                  <button
+                    type="button"
+                    className="download-pdf-btn"
+                    style={{ padding: '4px 10px', fontSize: '0.8rem', minHeight: 'unset' }}
+                    onClick={() => downloadTokenPdf({
+                      token: message.threadToken,
+                      topic: message.topic,
+                      reportedStaff: message.reportedStaff
+                        ? `${message.reportedStaff.name} (${message.reportedStaff.role})`
+                        : undefined,
+                      date: formatDate(message.createdAt),
+                    })}
+                  >
+                    Download PDF
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="detail-row">
               <span className="detail-label">Created</span>
               <span>{formatDate(message.createdAt)}</span>
@@ -126,13 +150,12 @@ function MessageDetail() {
           </div>
         )}
 
-        <div className="page-links-row" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+        <div className="page-links-row">
           <Link
             to={localStorage.getItem('superAdminAuth') === 'true' ? '/admin/super' : '/admin'}
             className="auth-button"
-            style={{ textDecoration: 'none', textAlign: 'center' }}
           >
-            Back to Dashboard
+            {localStorage.getItem('superAdminAuth') === 'true' ? 'Back to Dashboard' : 'Back to Admin Dashboard'}
           </Link>
         </div>
       </div>

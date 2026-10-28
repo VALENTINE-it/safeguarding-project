@@ -16,9 +16,16 @@
 
 # Go build outputs
 bin/
-**/server
+cmd/server/server
 server
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
 
-# IDE
+# IDE & Editor files
 .idea/
+.vscode/
+
 

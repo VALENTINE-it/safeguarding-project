@@ -53,7 +53,7 @@ func NewServer() (*Server, error) {
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]any{
-			"message": "Safeguarding API is running",
+			"message": "Linda API is running",
 		})
 	})
 
